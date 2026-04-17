@@ -425,6 +425,35 @@ function setGhToken(t) {
   try { sessionStorage.setItem('_mdt', t); } catch(e) {}
 }
 
+// ---- Token prompt ----
+function showTokenPrompt(onSuccess) {
+  // Show a small non-blocking banner asking admin to re-enter token
+  let banner = document.getElementById('token-prompt-banner');
+  if (banner) { banner.style.display = 'flex'; return; }
+  banner = document.createElement('div');
+  banner.id = 'token-prompt-banner';
+  banner.style.cssText = 'position:fixed;bottom:70px;right:22px;background:#1a1f3a;color:white;padding:14px 16px;border-radius:10px;font-size:13px;z-index:9998;box-shadow:0 4px 20px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:8px;width:300px;';
+  banner.innerHTML = `
+    <div style="font-weight:600;font-size:13px;">🔑 GitHub Token Required</div>
+    <div style="font-size:12px;color:#aab4d4;line-height:1.5;">Enter your GitHub token to sync data. It stays in memory only and is never saved to the file.</div>
+    <input id="tpb-input" type="password" placeholder="ghp_... or github_pat_..." style="padding:7px 9px;border-radius:6px;border:1px solid #3a4060;background:#0d1120;color:white;font-size:12px;outline:none;font-family:monospace;">
+    <div style="display:flex;gap:7px;">
+      <button onclick="saveTokenPrompt()" style="flex:1;padding:6px;background:#3b6ef0;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;">Save Token</button>
+      <button onclick="document.getElementById('token-prompt-banner').style.display='none'" style="padding:6px 10px;background:transparent;color:#aab4d4;border:1px solid #3a4060;border-radius:6px;cursor:pointer;font-size:12px;">Later</button>
+    </div>
+  `;
+  document.body.appendChild(banner);
+}
+
+function saveTokenPrompt() {
+  const val = document.getElementById('tpb-input')?.value?.trim();
+  if (!val) { showToast('Please enter your token', 'warning'); return; }
+  setGhToken(val);
+  document.getElementById('token-prompt-banner').style.display = 'none';
+  showToast('Token saved — retrying sync…', 'success');
+  saveToStorage(); // retry the save
+}
+
 // ---- Gist API helpers ----
 
 async function gistFetch(gistId) {
@@ -443,8 +472,8 @@ async function gistFetch(gistId) {
 
 async function gistSave(payload) {
   const tok = getGhToken();
-  if (!tok) { showToast('Admin token not set — data not synced to GitHub', 'warning'); return false; }
-  if (!GIST_CONFIG.gistId) { showToast('Gist not configured. Open Settings → GitHub Setup.', 'warning'); return false; }
+  if (!GIST_CONFIG.gistId) { showToast('Gist not configured. Open Settings → ☁ GitHub Sync Setup.', 'warning'); return false; }
+  if (!tok) { showTokenPrompt(); return false; }
   // Strip base64 file data before saving to Gist (keep file metadata only)
   const sanitised = JSON.parse(JSON.stringify(payload));
   (sanitised.receptionists || []).forEach(r => {
@@ -2593,13 +2622,16 @@ async function init() {
   if (GIST_CONFIG.gistId) {
     setInterval(async () => { const loaded = await loadFromStorage(); if (loaded) reRender(); }, 300000);
   }
-  // Indicate sync not configured if no Gist set up
-  if (!GIST_CONFIG.gistId) {
-    setTimeout(() => {
-      const dot = document.getElementById('sync-dot');
+  // Indicate sync status
+  setTimeout(() => {
+    const dot = document.getElementById('sync-dot');
+    if (!GIST_CONFIG.gistId) {
       if (dot) { dot.style.background = '#c98a10'; dot.title = 'GitHub Sync not configured — Admin: click to set up'; }
-    }, 1500);
-  }
+    } else if (!getGhToken()) {
+      if (dot) { dot.style.background = '#c98a10'; dot.title = 'Token missing — click to enter'; }
+      showTokenPrompt();
+    }
+  }, 1500);
 }
 
 init();

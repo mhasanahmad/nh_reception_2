@@ -1,0 +1,2609 @@
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediDesk — Hospital Reception Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#f5f7fb;--surface:#ffffff;--surface2:#f0f3fa;--surface3:#e8ecf6;
+  --border:#e2e7f0;--border2:#cdd4e8;--text:#0d1526;--text2:#4a5470;--text3:#8c97b8;
+  --blue:#3b6ef0;--blue-light:#eef3ff;--blue-mid:#c5d4fc;
+  --teal:#0e9f8e;--teal-light:#edfaf7;--teal-mid:#a3e8df;
+  --green:#1a9e52;--green-light:#edfaf3;
+  --amber:#c98a10;--amber-light:#fdf6e3;
+  --red:#d63b3b;--red-light:#fef0f0;
+  --purple:#6d3fd4;--purple-light:#f2eeff;
+  --coral:#d95c20;--coral-light:#fff2ea;
+  --slate:#5c6b8a;--slate-light:#f0f3f9;
+  --sidebar-w:224px;--topbar-h:54px;--rightbar-w:272px;
+  --radius:10px;--radius-sm:6px;--radius-xs:4px;
+  --shadow:0 1px 4px rgba(20,30,80,0.07);--shadow-md:0 4px 16px rgba(20,30,80,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+/* TOPBAR */
+.topbar{height:var(--topbar-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:14px;z-index:200;flex-shrink:0;}
+.topbar-logo{font-size:17px;font-weight:600;color:var(--blue);letter-spacing:-.5px;display:flex;align-items:center;gap:8px;}
+.topbar-logo .logo-box{width:28px;height:28px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.topbar-logo svg{width:15px;height:15px;fill:white;}
+.topbar-nav{display:flex;gap:2px;margin-left:20px;}
+.topbar-tab{padding:6px 13px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);border:none;background:transparent;transition:all .15s;position:relative;}
+.topbar-tab:hover{background:var(--surface2);color:var(--text);}
+.topbar-tab.active{background:var(--blue-light);color:var(--blue);}
+.topbar-tab .notif-dot{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--red);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.topbar-date{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;}
+.shift-badge{padding:3px 9px;border-radius:20px;font-size:12px;font-weight:500;}
+.shift-morning{background:var(--amber-light);color:var(--amber);}
+.shift-evening{background:var(--coral-light);color:var(--coral);}
+.shift-night{background:var(--purple-light);color:var(--purple);}
+/* DEMO BANNER */
+.demo-banner{background:#fdf3e3;border-bottom:1px solid #f5c842;padding:6px 18px;font-size:12px;color:#7a5c00;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.demo-banner.hidden{display:none;}
+/* MAIN */
+.main-layout{display:flex;flex:1;overflow:hidden;}
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;}
+.sidebar-section{padding:14px 10px 6px;}
+.sidebar-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:0 8px;margin-bottom:4px;}
+.sidebar-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:13px;font-weight:400;border:none;background:transparent;width:100%;text-align:left;transition:all .15s;}
+.sidebar-item:hover{background:var(--surface2);color:var(--text);}
+.sidebar-item.active{background:var(--blue-light);color:var(--blue);font-weight:500;}
+.sidebar-item .icon{width:15px;height:15px;flex-shrink:0;opacity:.65;}
+.sidebar-item.active .icon{opacity:1;}
+.sidebar-item .task-alert{margin-left:auto;background:var(--red);color:white;border-radius:10px;font-size:10px;padding:1px 6px;font-weight:600;}
+.sidebar-divider{height:1px;background:var(--border);margin:6px 10px;}
+.rec-cards{padding:6px 10px;display:flex;flex-direction:column;gap:5px;}
+.rec-mini{padding:7px 9px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:all .15s;background:var(--surface);}
+.rec-mini:hover{border-color:var(--blue-mid);background:var(--blue-light);}
+.rec-mini.active{border-color:var(--blue);background:var(--blue-light);}
+.rec-mini-name{font-size:12px;font-weight:500;color:var(--text);}
+.rec-mini-row{display:flex;align-items:center;justify-content:space-between;margin-top:2px;}
+.rec-mini-shift{font-size:11px;color:var(--text3);}
+.rec-mini-dot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:4px;}
+.rec-incomplete-badge{font-size:10px;background:var(--red-light);color:var(--red);padding:1px 5px;border-radius:8px;font-weight:500;}
+/* CENTER */
+.center{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px;}
+/* RIGHT */
+.rightbar{width:var(--rightbar-w);background:var(--surface);border-left:1px solid var(--border);padding:14px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:14px;}
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.card-ht{font-size:13px;font-weight:600;color:var(--text);}
+/* STAT GRID */
+.stat-grid{display:grid;gap:10px;}
+.stat-grid-4{grid-template-columns:repeat(4,1fr);}
+.stat-grid-3{grid-template-columns:repeat(3,1fr);}
+.stat-grid-2{grid-template-columns:repeat(2,1fr);}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow);}
+.stat-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.stat-value{font-size:24px;font-weight:600;line-height:1;margin-bottom:3px;}
+.stat-sub{font-size:11px;color:var(--text3);}
+.stat-blue{border-top:3px solid var(--blue);}
+.stat-green{border-top:3px solid var(--green);}
+.stat-amber{border-top:3px solid var(--amber);}
+.stat-teal{border-top:3px solid var(--teal);}
+.stat-purple{border-top:3px solid var(--purple);}
+.stat-coral{border-top:3px solid var(--coral);}
+.stat-red{border-top:3px solid var(--red);}
+/* PROFILE */
+.profile-header{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+.avatar{border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:600;color:white;flex-shrink:0;}
+.profile-name{font-size:16px;font-weight:600;color:var(--text);}
+.profile-meta{font-size:12px;color:var(--text3);margin-top:2px;}
+.profile-badges{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
+.badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;}
+.form-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;}
+.form-group{display:flex;flex-direction:column;gap:3px;}
+.form-label{font-size:12px;font-weight:500;color:var(--text2);}
+.form-input{padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);transition:border-color .15s;outline:none;}
+.form-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,110,240,.09);}
+.form-input[type="number"]{font-family:'DM Mono',monospace;}
+.sec-title{font-size:13px;font-weight:600;color:var(--text);padding:8px 0 7px;border-bottom:1px solid var(--border);margin-bottom:11px;display:flex;align-items:center;gap:7px;}
+.sec-dot{width:7px;height:7px;border-radius:50%;}
+/* DATE PICKER ROW */
+.date-nav{display:flex;align-items:center;gap:8px;background:var(--surface2);padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);}
+.date-nav-label{font-size:12px;color:var(--text2);font-weight:500;}
+.date-nav input[type=date]{padding:5px 8px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:12px;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;}
+.date-nav input[type=date]:focus{border-color:var(--blue);}
+.date-nav-btn{padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface);font-size:12px;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .15s;}
+.date-nav-btn:hover{background:var(--surface3);color:var(--text);}
+.date-nav-btn.today-btn{background:var(--blue-light);color:var(--blue);border-color:var(--blue-mid);}
+/* TABLES */
+.dept-table{width:100%;border-collapse:collapse;font-size:13px;}
+.dept-table th{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:6px 10px;text-align:left;background:var(--surface2);}
+.dept-table th:last-child{text-align:right;}
+.dept-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.dept-table td:last-child{text-align:right;}
+.dept-table tr:last-child td{border-bottom:none;}
+.amount-input{width:100px;padding:5px 8px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-family:'DM Mono',monospace;font-size:12px;text-align:right;outline:none;}
+.amount-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,110,240,.09);}
+.dept-row-label{font-weight:500;color:var(--text);}
+.dept-row-sub{font-size:11px;color:var(--text3);}
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:var(--blue);color:white;}
+.btn-primary:hover{background:#2d5fd4;}
+.btn-secondary{background:var(--surface);border:1px solid var(--border2);color:var(--text);}
+.btn-secondary:hover{background:var(--surface2);}
+.btn-success{background:var(--green);color:white;}
+.btn-success:hover{background:#158744;}
+.btn-danger{background:var(--red);color:white;}
+.btn-danger:hover{background:#c03030;}
+.btn-amber{background:var(--amber-light);color:var(--amber);border:1px solid #e8c060;}
+.btn-sm{padding:4px 10px;font-size:12px;}
+.btn-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+/* MINI STATS */
+.mini-stat{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);}
+.mini-stat:last-child{border-bottom:none;}
+.mini-stat-label{font-size:12px;color:var(--text2);}
+.mini-stat-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;}
+/* ANALYTICS BARS */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.bar-label{font-size:12px;color:var(--text2);min-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width .7s cubic-bezier(.4,0,.2,1);}
+.bar-val{font-size:12px;font-family:'DM Mono',monospace;color:var(--text2);min-width:70px;text-align:right;}
+/* MONTHLY CHART */
+.month-chart{display:flex;align-items:flex-end;gap:10px;height:90px;padding-top:10px;}
+.month-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;}
+.month-bar{width:100%;border-radius:4px 4px 0 0;transition:height .6s cubic-bezier(.4,0,.2,1);min-height:3px;}
+.month-bar-label{font-size:10px;color:var(--text3);text-align:center;}
+.month-bar-val{font-size:10px;font-family:'DM Mono',monospace;color:var(--text2);}
+/* RECORDS */
+.record-item{padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:5px;background:var(--surface);}
+.record-date{font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);}
+.record-summary{font-size:12px;font-weight:500;color:var(--text);margin-top:2px;line-height:1.5;}
+/* TOTALS ROW */
+.totals-row{background:var(--blue-light);border-radius:var(--radius-sm);padding:9px 13px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+.totals-item{display:flex;flex-direction:column;gap:1px;}
+.totals-label{font-size:11px;color:var(--blue);font-weight:500;}
+.totals-value{font-size:15px;font-weight:600;color:var(--blue);font-family:'DM Mono',monospace;}
+/* CHECKLIST */
+.checklist-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:6px;background:var(--surface);transition:all .15s;}
+.checklist-item:hover{border-color:var(--border2);background:var(--surface2);}
+.checklist-item.done{background:var(--green-light);border-color:#a3e0b8;}
+.checklist-item.done .check-label{text-decoration:line-through;color:var(--text3);}
+.checklist-checkbox{width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0;}
+.check-label{font-size:13px;color:var(--text);flex:1;}
+.check-cat{font-size:10px;font-weight:600;padding:2px 6px;border-radius:8px;}
+.incomplete-warning{background:var(--red-light);border:1px solid #f8c0c0;border-radius:var(--radius-sm);padding:9px 13px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--red);}
+.complete-success{background:var(--green-light);border:1px solid var(--teal-mid);border-radius:var(--radius-sm);padding:9px 13px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--green);}
+/* SHIFT TIMING */
+.shift-time-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;background:var(--surface);}
+.shift-time-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.overlap-warning{background:var(--amber-light);border:1px solid #e8c060;border-radius:var(--radius-sm);padding:7px 11px;font-size:12px;color:var(--amber);display:flex;align-items:center;gap:7px;}
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{padding:7px 9px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.data-table td{padding:8px 9px;border-bottom:1px solid var(--border);color:var(--text);}
+.data-table tr:hover td{background:var(--surface2);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table .mono{font-family:'DM Mono',monospace;}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,15,40,.45);z-index:500;display:flex;align-items:center;justify-content:center;}
+.modal-box{background:var(--surface);border-radius:var(--radius);width:580px;max-height:84vh;overflow-y:auto;box-shadow:0 20px 60px rgba(10,15,40,.18);}
+.modal-header{padding:16px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:15px;font-weight:600;}
+.modal-body{padding:18px;}
+.modal-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px;}
+.modal-close{background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:17px;line-height:1;padding:2px 5px;border-radius:4px;}
+.modal-close:hover{background:var(--surface2);color:var(--text);}
+/* HELP */
+.help-section{margin-bottom:18px;}
+.help-section-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.help-step{display:flex;gap:11px;margin-bottom:10px;align-items:flex-start;}
+.help-step-num{width:22px;height:22px;border-radius:50%;background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.help-step-text{font-size:13px;color:var(--text2);line-height:1.6;}
+.help-step-text strong{color:var(--text);font-weight:600;}
+.faq-item{border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;overflow:hidden;}
+.faq-q{padding:10px 12px;font-size:13px;font-weight:500;cursor:pointer;background:var(--surface2);display:flex;justify-content:space-between;align-items:center;}
+.faq-a{padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.65;border-top:1px solid var(--border);background:var(--surface);}
+.support-card{background:linear-gradient(135deg,var(--blue-light),var(--teal-light));border:1px solid var(--blue-mid);border-radius:var(--radius);padding:16px;text-align:center;}
+.support-number{font-size:22px;font-weight:700;color:var(--blue);font-family:'DM Mono',monospace;letter-spacing:1px;margin:6px 0;}
+.task-role-tab{display:flex;gap:5px;margin-bottom:14px;}
+.task-role-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border2);font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s;font-family:'DM Sans',sans-serif;}
+.task-role-btn.active{background:var(--blue);color:white;border-color:var(--blue);}
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--text);color:white;padding:11px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:9999;box-shadow:var(--shadow-md);opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.success{background:#1a8c4a;}
+.toast.warning{background:var(--amber);}
+/* MISC */
+.hidden{display:none!important;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.filter-select{padding:5px 9px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);outline:none;cursor:pointer;}
+.filter-select:focus{border-color:var(--blue);}
+.filter-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+/* SHIFT SELECTOR */
+.shift-selector{display:flex;gap:5px;}
+.shift-btn{padding:4px 11px;border-radius:20px;border:1px solid var(--border2);font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s;font-family:'DM Sans',sans-serif;}
+.shift-btn.active-morning{background:var(--amber-light);border-color:#e8c060;color:var(--amber);}
+.shift-btn.active-evening{background:var(--coral-light);border-color:#e8a060;color:var(--coral);}
+.shift-btn.active-night{background:var(--purple-light);border-color:#b49fe8;color:var(--purple);}
+/* REPLACEMENT BANNER */
+.rep-banner{background:var(--amber-light);border:1px solid #f5c842;border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:9px;font-size:13px;color:#7a5c00;}
+/* INSIGHT CARD */
+.insight-card{border-left:3px solid var(--blue);padding:8px 12px;background:var(--blue-light);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px;}
+.insight-card.green{border-color:var(--green);background:var(--green-light);}
+.insight-card.amber{border-color:var(--amber);background:var(--amber-light);}
+/* LEGEND */
+.chart-legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+</style>
+<script id="medidesk-data">window.__MD__={"receptionists":[],"records":[],"replacements":[],"checklists":{}};</script>
+<script id="medidesk-gist-config">window.__GIST_CONFIG__={"gistId":"","ownerLogin":""};</script>
+</head>
+<body>
+
+<!-- DEMO BANNER -->
+<div class="demo-banner hidden" id="demo-banner">
+  <strong>Demo Mode Active</strong> — You are viewing sample/demo data. Your real data is safely preserved.
+  <button class="btn btn-sm" style="background:#7a5c00;color:white;margin-left:auto;" onclick="deactivateDemo()">Exit Demo Mode</button>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-box"><svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a5 5 0 110 10A5 5 0 018 3zm-1 2v4l3.5 2-.7 1.2L6 10V5h1z"></path></svg></div>
+    MediDesk
+  </div>
+  <nav class="topbar-nav">
+    <button class="topbar-tab active" onclick="switchTab('reception')" id="tab-reception">Reception</button>
+    <button class="topbar-tab" onclick="switchTab('replacement')" id="tab-replacement">Replacement Duty</button>
+    <button class="topbar-tab" onclick="switchTab('master')" id="tab-master">Master Dashboard</button>
+    <button class="topbar-tab" onclick="switchTab('analytics')" id="tab-analytics">Analytics</button>
+    <button class="topbar-tab" onclick="switchTab('settings')" id="tab-settings">Settings</button>
+    <button class="topbar-tab" onclick="switchTab('help')" id="tab-help">Help &amp; Guide</button>
+  </nav>
+  <div class="topbar-right">
+    <span class="topbar-date" id="topbar-date">Thu, 16 Apr, 2026</span>
+    <span class="shift-badge" id="active-shift-badge">—</span>
+    <span id="admin-lock-btn" style="display: none;"><button class="btn btn-sm btn-danger" onclick="lockAdmin()" title="Lock admin session">🔒 Lock Admin</button></span>
+    <span id="sync-dot" title="GitHub Sync Status" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--border2);transition:background .4s;margin:0 2px;" onclick="if(adminUnlocked)openGistSetupModal();" title="GitHub Sync — click to configure"></span>
+    <button class="btn btn-sm btn-secondary" onclick="downloadUpdatedHTML()" title="Download updated file with all data">⬇ Save File</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-layout">
+  <aside class="sidebar" id="sidebar" style="">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigation</div>
+      <button class="sidebar-item active" onclick="setSidebarView('profile')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z"></path></svg>Profile &amp; Overview
+      </button>
+      <button class="sidebar-item " onclick="setSidebarView('checklist')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1H2zm0 3h12v1H2zm0 3h8v1H2zm0 3h6v1H2zm10-1l1.5 1.5L16 8l-.7-.7-1.8 1.8-.8-.8-.7.7L13 11z"></path></svg>Daily Checklist
+        <span class="task-alert">8</span>
+      </button>
+      <button class="sidebar-item " onclick="setSidebarView('ipd')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm5 2v2H5v1h2v2h1v-2h2V7H8V5H7z"></path></svg>IPD Patients
+      </button>
+      <button class="sidebar-item " onclick="setSidebarView('opd')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10a1 1 0 011 1v1H2V3a1 1 0 011-1zM2 6h12v7a1 1 0 01-1 1H3a1 1 0 01-1-1V6zm3 2v1h6V8H5zm0 3v1h4v-1H5z"></path></svg>OPD &amp; Movements
+      </button>
+      <button class="sidebar-item " onclick="setSidebarView('services')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M7 1v14h2V1H7zM1 5h4v2H1V5zm10 0h4v2h-4V5zm-4 6H1v2h6v-2zm4 0h4v2h-4v-2z"></path></svg>Other Services
+      </button>
+      <button class="sidebar-item " onclick="setSidebarView('collection')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 9.5h-1.5V7.25H5.5v-1.5h1.75V4h1.5v1.75H10.5v1.5H8.75V10.5z"></path></svg>Money Collection
+      </button>
+      <button class="sidebar-item " onclick="setSidebarView('history')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.5 7.5h-3v-1h2V4h1v4.5z"></path></svg>My Records
+      </button>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div style="padding:10px 10px 4px;display:flex;align-items:center;justify-content:space-between;">
+      <div class="sidebar-label" style="margin-bottom:0;">Receptionists</div>
+      <button onclick="sidebarRequestAdminForRec()" style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text3);cursor:pointer;font-family:inherit;" title="Admin login required">🔒 Admin</button>
+    </div>
+    <div class="rec-cards"></div>
+    
+  </aside>
+  <main class="center" id="center">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;gap:18px;text-align:center;padding:40px;">
+        <div style="width:64px;height:64px;border-radius:18px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:28px;">🏥</div>
+        <div>
+          <div style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:7px;">No Receptionists Added Yet</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7;max-width:360px;">Go to <strong>Settings</strong> tab (admin login required) to add your first receptionist. All fields are pre-filled — just enter the name, phone and assign a shift.</div>
+        </div>
+        <button class="btn btn-primary" onclick="switchTab('settings')">Go to Settings →</button>
+      </div></main>
+  <aside class="rightbar" id="rightbar"></aside>
+</div>
+
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal-box" id="modal-box">
+    <div class="modal-header"><span class="modal-title" id="modal-title">Clear Data</span><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="modal-body"><div style="font-size:13px;line-height:1.75;"><div style="color:var(--red);margin-bottom:12px;"><strong>⚠ Warning — this cannot be undone.</strong> Download a backup first.</div><div style="margin-bottom:10px;"><strong>Clear Records Only</strong> — deletes all records, checklists and replacements, but keeps your receptionists.</div><div><strong>Full Reset</strong> — removes everything including all receptionists.</div></div></div>
+    <div class="modal-footer" id="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-amber" onclick="clearAllData(false)">Clear Records Only</button>
+     <button class="btn btn-danger" onclick="clearAllData(true)">Full Reset</button></div>
+  </div>
+</div>
+<div class="toast" id="toast">Admin session locked</div>
+
+<script>
+// =====================================================================
+// DATA DEFINITIONS
+// =====================================================================
+const IPD_DEPTS = ['ICU','Private Ward','Semi Private','General Ward'];
+const SERVICES = ['Ambulance','Injection','RB Sugar','Dressing','X-Ray','Nishat Pathology','Pioneer Pathology','Physiotherapy','Blood Pressure','2D Echo','USG','OT Charge','POP Slab'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Tasks are AUTO-CHECKED based on actual data saved — receptionists cannot manually tick them
+const DAILY_TASKS = [
+  { id:'t1', text:'Update IPD patient counts for all departments (enter a number, even 0, for every ward)', cat:'IPD', catColor:'#3b6ef0', hint:'Go to IPD Patients → fill all 4 wards → Save' },
+  { id:'t2', text:'Update OPD count (enter actual count or 0)', cat:'OPD', catColor:'#0e9f8e', hint:'Go to OPD & Movements → fill OPD count → Save' },
+  { id:'t3', text:'Update admissions and discharges (enter 0 if none)', cat:'OPD', catColor:'#0e9f8e', hint:'Go to OPD & Movements → fill Admissions & Discharges → Save' },
+  { id:'t4', text:'Update all other service counts (enter 0 for services not used today)', cat:'Services', catColor:'#d95c20', hint:'Go to Other Services → fill all fields → Save' },
+  { id:'t5', text:'Record money collected from IPD departments', cat:'Finance', catColor:'#1a9e52', hint:'Go to Money Collection → fill IPD amounts → Save' },
+  { id:'t6', text:'Record money collected from OPD', cat:'Finance', catColor:'#1a9e52', hint:'Go to Money Collection → fill OPD amount → Save' },
+  { id:'t7', text:'Record money collected from all other services', cat:'Finance', catColor:'#1a9e52', hint:'Go to Money Collection → fill services amounts → Save' },
+  { id:'t8', text:'Submit the final day record', cat:'System', catColor:'#6d3fd4', hint:'Go to Money Collection → click Submit Day\'s Record' },
+];
+
+const DEFAULT_RECEPTIONISTS = []; // Admin adds receptionists via Settings
+
+// =====================================================================
+// STATE
+// =====================================================================
+let S = {
+  receptionists: JSON.parse(JSON.stringify(DEFAULT_RECEPTIONISTS)),
+  records: [],
+  replacements: [],
+  checklists: {},
+  demoRecords: [],
+  demoReplacements: [],
+  isDemoMode: false,
+  currentRec: 'r1',
+  currentView: 'profile',
+  mainTab: 'reception',
+  viewDate: todayStr(),
+};
+
+// =====================================================================
+// ADMIN PASSWORD
+// =====================================================================
+const ADMIN_TABS = ['master','analytics','settings'];
+let adminUnlocked = false;
+let adminPw = 'Hasan@123';
+
+function isAdminTab(tab) { return ADMIN_TABS.includes(tab); }
+
+// =====================================================================
+// AUTO-CHECKLIST: tasks checked automatically when data is saved
+// Receptionists CANNOT manually tick tasks — they must do the actual work
+// =====================================================================
+function computeAutoChecklist(recId, date) {
+  const rec = getRecord(recId, date);
+  const done = [];
+  if (!rec) return done;
+  // t1: IPD data saved for this date
+  if (rec._ipdSaved) done.push('t1');
+  // t2: OPD count saved
+  if (rec._opdSaved) done.push('t2');
+  // t3: Admissions & discharges saved (same save action as OPD)
+  if (rec._opdSaved) done.push('t3');
+  // t4: Services saved
+  if (rec._svcSaved) done.push('t4');
+  // t5,t6,t7: Money collection saved
+  if (rec._moneySaved) { done.push('t5'); done.push('t6'); done.push('t7'); }
+  // t8: Final record submitted
+  if (rec.submitted) done.push('t8');
+  return done;
+}
+
+// =====================================================================
+// PERSISTENCE (GitHub Gist — shared, persistent, global)
+// =====================================================================
+
+// Gist config — embedded in the file. Admin sets these via setup wizard.
+// GIST_ID is the ID of the GitHub Gist used to store all data.
+// GITHUB_TOKEN is the personal access token (stored only in-memory/sessionStorage, never in HTML).
+const GIST_CONFIG = window.__GIST_CONFIG__ || { gistId: '', ownerLogin: '' };
+const GIST_FILENAME = 'medidesk_data.json';
+
+// In-memory token (never written to HTML or localStorage)
+let _ghToken = '';
+function getGhToken() {
+  if (_ghToken) return _ghToken;
+  try { _ghToken = sessionStorage.getItem('_mdt') || ''; } catch(e) {}
+  return _ghToken;
+}
+function setGhToken(t) {
+  _ghToken = t;
+  try { sessionStorage.setItem('_mdt', t); } catch(e) {}
+}
+
+// ---- Gist API helpers ----
+
+async function gistFetch(gistId) {
+  try {
+    const headers = { 'Accept': 'application/vnd.github+json' };
+    const tok = getGhToken();
+    if (tok) headers['Authorization'] = 'Bearer ' + tok;
+    const res = await fetch('https://api.github.com/gists/' + gistId, { headers });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const raw = json.files?.[GIST_FILENAME]?.content;
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+async function gistSave(payload) {
+  const tok = getGhToken();
+  if (!tok) { showToast('Admin token not set — data not synced to GitHub', 'warning'); return false; }
+  if (!GIST_CONFIG.gistId) { showToast('Gist not configured. Open Settings → GitHub Setup.', 'warning'); return false; }
+  // Strip base64 file data before saving to Gist (keep file metadata only)
+  const sanitised = JSON.parse(JSON.stringify(payload));
+  (sanitised.receptionists || []).forEach(r => {
+    if (r.personalFile && r.personalFile.data) r.personalFile = { ...r.personalFile, data: '__removed__' };
+    if (r.personalFiles) r.personalFiles = r.personalFiles.map(f => f.data ? { ...f, data: '__removed__' } : f);
+  });
+  try {
+    const res = await fetch('https://api.github.com/gists/' + GIST_CONFIG.gistId, {
+      method: 'PATCH',
+      headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(sanitised) } } })
+    });
+    return res.ok;
+  } catch(e) { return false; }
+}
+
+async function gistCreate(tok, description) {
+  try {
+    const res = await fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        description: description || 'MediDesk Hospital Data',
+        public: false,
+        files: { [GIST_FILENAME]: { content: JSON.stringify({ receptionists: [], records: [], replacements: [], checklists: {} }) } }
+      })
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return { gistId: json.id, ownerLogin: json.owner?.login || '' };
+  } catch(e) { return null; }
+}
+
+async function gistDelete(gistId, tok) {
+  try {
+    const res = await fetch('https://api.github.com/gists/' + gistId, {
+      method: 'PATCH',
+      headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify({ receptionists: [], records: [], replacements: [], checklists: {} }) } } })
+    });
+    return res.ok;
+  } catch(e) { return false; }
+}
+
+// ---- Save / Load ----
+
+let _saveTimer = null;
+function saveToStorage() {
+  // Debounce: batch rapid saves into one Gist write
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(async () => {
+    const payload = {
+      receptionists: S.receptionists,
+      records: S.records,
+      replacements: S.replacements,
+      checklists: S.checklists,
+    };
+    const ok = await gistSave(payload);
+    if (ok) {
+      const dot = document.getElementById('sync-dot');
+      if (dot) { dot.style.background = '#1a9e52'; dot.title = 'Synced to GitHub ✓'; setTimeout(()=>{ dot.style.background=''; }, 3000); }
+    }
+  }, 1200);
+}
+
+async function loadFromStorage() {
+  if (!GIST_CONFIG.gistId) {
+    // No gist configured yet — try embedded __MD__
+    const emb = window.__MD__;
+    if (emb) {
+      if (emb.receptionists) S.receptionists = emb.receptionists;
+      if (emb.records)       S.records       = emb.records;
+      if (emb.replacements)  S.replacements  = emb.replacements;
+      if (emb.checklists)    S.checklists    = emb.checklists;
+      return true;
+    }
+    return false;
+  }
+  showSyncStatus('loading');
+  const data = await gistFetch(GIST_CONFIG.gistId);
+  if (data) {
+    if (data.receptionists) S.receptionists = data.receptionists;
+    if (data.records)       S.records       = data.records;
+    if (data.replacements)  S.replacements  = data.replacements;
+    if (data.checklists)    S.checklists    = data.checklists;
+    showSyncStatus('ok');
+    return true;
+  }
+  showSyncStatus('error');
+  return false;
+}
+
+function showSyncStatus(state) {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  if (state === 'loading') { dot.style.background = '#c98a10'; dot.title = 'Syncing…'; }
+  else if (state === 'ok')  { dot.style.background = '#1a9e52'; dot.title = 'Synced ✓'; }
+  else                      { dot.style.background = '#d63b3b'; dot.title = 'Sync error'; }
+}
+
+// ---- Gist Setup Modal ----
+
+function openGistSetupModal() {
+  const hasGist = !!GIST_CONFIG.gistId;
+  openModal('GitHub Gist Setup — Cloud Sync', `
+    <div style="font-size:13px;line-height:1.75;color:var(--text2);margin-bottom:14px;">
+      MediDesk stores all data in a <strong>GitHub Gist</strong> so every user who opens this file sees the same live data. Deletes are instant and global.
+    </div>
+    ${hasGist ? `<div style="background:var(--green-light);border:1px solid var(--teal-mid);border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--green);margin-bottom:12px;">✓ Gist configured: <code style="font-family:'DM Mono',monospace;">${GIST_CONFIG.gistId}</code></div>` : `<div style="background:var(--amber-light);border:1px solid #e8c060;border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--amber);margin-bottom:12px;">⚠ No Gist configured yet.</div>`}
+    <div style="background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:var(--radius-sm);padding:10px 13px;font-size:12px;line-height:1.7;margin-bottom:14px;">
+      <strong>How to get a GitHub Token:</strong><br>
+      1. Go to <strong>github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens</strong><br>
+      2. Create a token with <strong>Gists: Read and Write</strong> permission<br>
+      3. Paste it below. The token is never saved to the HTML file — it lives only in your browser session.
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label class="form-label">GitHub Personal Access Token (required for saving)</label>
+      <input class="form-input" id="gs_token" type="password" placeholder="github_pat_... or ghp_..." value="${getGhToken()}">
+    </div>
+    <div style="border-top:1px solid var(--border);margin:12px 0;padding-top:12px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">Option A — Create a new Gist automatically</div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <label class="form-label">Gist description (optional)</label>
+        <input class="form-input" id="gs_desc" placeholder="MediDesk — Nishat Hospital" value="MediDesk Hospital Data">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="doCreateGist()">Create New Gist & Link</button>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:12px 0;padding-top:12px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">Option B — Link an existing Gist ID</div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <label class="form-label">Existing Gist ID</label>
+        <input class="form-input" id="gs_existing" placeholder="e.g. a1b2c3d4e5f6..." value="${GIST_CONFIG.gistId||''}">
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="doLinkGist()">Link This Gist</button>
+    </div>
+  `, `<button class="btn btn-secondary" onclick="closeModal()">Close</button>`);
+}
+
+async function doCreateGist() {
+  const tok = document.getElementById('gs_token')?.value?.trim();
+  const desc = document.getElementById('gs_desc')?.value?.trim();
+  if (!tok) { showToast('Enter your GitHub token first', 'warning'); return; }
+  setGhToken(tok);
+  showToast('Creating Gist…');
+  const result = await gistCreate(tok, desc);
+  if (!result) { showToast('Failed to create Gist. Check your token and try again.', 'warning'); return; }
+  GIST_CONFIG.gistId = result.gistId;
+  GIST_CONFIG.ownerLogin = result.ownerLogin;
+  closeModal();
+  showToast('✓ Gist created! Now download the updated HTML to save your Gist ID.', 'success');
+  showGistLinkInstructions(result.gistId);
+}
+
+async function doLinkGist() {
+  const tok = document.getElementById('gs_token')?.value?.trim();
+  const id = document.getElementById('gs_existing')?.value?.trim();
+  if (!tok) { showToast('Enter your GitHub token first', 'warning'); return; }
+  if (!id) { showToast('Enter a Gist ID', 'warning'); return; }
+  setGhToken(tok);
+  GIST_CONFIG.gistId = id;
+  closeModal();
+  showToast('Gist linked! Loading data…', 'success');
+  const loaded = await loadFromStorage();
+  if (loaded) reRender();
+  showGistLinkInstructions(id);
+}
+
+function showGistLinkInstructions(gistId) {
+  openModal('⬇ Save Updated File — Important', `
+    <div style="font-size:13px;line-height:1.75;color:var(--text2);">
+      <div style="background:var(--green-light);border:1px solid var(--teal-mid);border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:12px;color:var(--green);">
+        ✓ Gist ID: <strong style="font-family:'DM Mono',monospace;">${gistId}</strong>
+      </div>
+      <p style="margin-bottom:10px;">To make this Gist ID permanent, you must <strong>download the updated HTML file</strong> and replace the one in your GitHub repo. This embeds the Gist ID into the file so it works for everyone who opens it.</p>
+      <p style="color:var(--red);">Until you do this, the Gist ID is only in memory and will be lost on refresh.</p>
+    </div>
+  `, `
+    <button class="btn btn-secondary" onclick="closeModal()">Later</button>
+    <button class="btn btn-primary" onclick="downloadUpdatedHTML();closeModal();">⬇ Download Now</button>
+  `);
+}
+
+// =====================================================================
+// DEMO DATA
+// =====================================================================
+function generateDemoRecords() {
+  const demo = [];
+  const demoReplacements = [];
+  const today = new Date();
+
+  // Helper: random int in range
+  const ri = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // Names for replacement staff
+  const replacementNames = ['Anjali Gupta','Rahul Singh','Meena Devi','Suresh Kumar','Fatima Begum','Vikram Patel','Kavita Yadav','Arjun Mehta'];
+
+  // Generate records for last 12 months (365 days)
+  for (let r of S.receptionists) {
+    for (let daysBack = 365; daysBack >= 0; daysBack--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - daysBack);
+      if (date > today) continue;
+
+      // Skip ~15% of days randomly (days off / no data)
+      if (Math.random() < 0.15) continue;
+
+      const dateStr = date.toISOString().slice(0, 10);
+      const dayOfYear = daysBack;
+
+      // Vary IPD data realistically — more patients on weekdays
+      const isWeekend = [0, 6].includes(date.getDay());
+      const ipd = {};
+      IPD_DEPTS.forEach(dep => {
+        ipd[dep] = isWeekend ? ri(0, 4) : ri(1, 8);
+      });
+
+      const svc = {};
+      SERVICES.forEach(s => {
+        svc[s] = isWeekend ? ri(0, 6) : ri(1, 14);
+      });
+
+      const money = {};
+      IPD_DEPTS.forEach(dep => money['ipd_' + dep] = ipd[dep] * ri(300, 900));
+      SERVICES.forEach(s => money['svc_' + s] = svc[s] * ri(50, 300));
+      money['opd'] = ri(15, 55) * 80;
+      const totalMoney = Object.values(money).reduce((a, b) => a + b, 0);
+      const opd = isWeekend ? ri(10, 30) : ri(20, 60);
+
+      // Partial task completion: each receptionist has different completion patterns
+      // r1 (Priya): almost always complete (90%)
+      // r2 (Irfan): complete ~70%, sometimes misses money entry
+      // r3 (Sunita): complete ~60%, sometimes misses services too
+      let _ipdSaved = true, _opdSaved = true, _svcSaved = true, _moneySaved = true, submitted = true;
+
+      if (r.id === 'r1') {
+        // Priya: very diligent, 90% fully complete
+        if (Math.random() < 0.10) { _moneySaved = false; submitted = false; }
+      } else if (r.id === 'r2') {
+        // Irfan: 70% complete, sometimes skips money
+        if (Math.random() < 0.15) { _svcSaved = false; }
+        if (Math.random() < 0.20) { _moneySaved = false; submitted = false; }
+      } else if (r.id === 'r3') {
+        // Sunita: 60% complete, night shift struggles
+        if (Math.random() < 0.20) { _svcSaved = false; _moneySaved = false; submitted = false; }
+        if (Math.random() < 0.15) { _opdSaved = false; }
+      }
+
+      demo.push({
+        id: 'demo_' + r.id + '_' + dateStr,
+        recId: r.id, date: dateStr, shift: r.shift,
+        ipd, svc, opd, admit: ri(1, 10), discharge: ri(0, 8),
+        money, totalMoney: _moneySaved ? totalMoney : 0,
+        submitted, isDemo: true,
+        _ipdSaved, _opdSaved, _svcSaved, _moneySaved,
+      });
+    }
+  }
+
+  // Generate backdated replacement records — ~20 across the year
+  const replacementDates = [];
+  for (let i = 0; i < 22; i++) {
+    const daysBack = ri(5, 360);
+    const date = new Date(today);
+    date.setDate(today.getDate() - daysBack);
+    const dateStr = date.toISOString().slice(0, 10);
+    if (replacementDates.includes(dateStr)) continue;
+    replacementDates.push(dateStr);
+
+    const originalRec = pick(S.receptionists);
+    const shifts = ['morning','evening','night'];
+    const shift = pick(shifts);
+    const shiftTimes = { morning:['08:00','14:00'], evening:['14:00','20:00'], night:['20:00','08:00'] };
+    const [startTime, endTime] = shiftTimes[shift];
+
+    const ipd = {}; IPD_DEPTS.forEach(dep => ipd[dep] = ri(0, 6));
+    const svc = {}; SERVICES.forEach(s => svc[s] = ri(0, 8));
+    const money = {};
+    IPD_DEPTS.forEach(dep => money['ipd_' + dep] = ipd[dep] * ri(200, 700));
+    SERVICES.forEach(s => money['svc_' + s] = svc[s] * ri(40, 200));
+    money['opd'] = ri(10, 40) * 80;
+    const totalMoney = Object.values(money).reduce((a, b) => a + b, 0);
+
+    demoReplacements.push({
+      id: 'demorep_' + i, replacementName: pick(replacementNames),
+      originalRecId: originalRec.id, shift, startTime, endTime, date: dateStr,
+      ipd, svc, opd: ri(10, 45), admit: ri(0, 8), discharge: ri(0, 6),
+      money, totalMoney, isDemo: true,
+    });
+  }
+
+  S.demoReplacements = demoReplacements;
+  return demo;
+}
+
+function activateDemo() {
+  S.demoRecords = generateDemoRecords();
+  S.isDemoMode = true;
+  document.getElementById('demo-banner').classList.remove('hidden');
+  showToast('Demo mode activated — sample data loaded', 'success');
+  reRender();
+}
+
+function deactivateDemo() {
+  S.isDemoMode = false;
+  S.demoRecords = [];
+  S.demoReplacements = [];
+  document.getElementById('demo-banner').classList.add('hidden');
+  showToast('Demo mode off — showing your real data');
+  reRender();
+}
+
+function activeRecords() {
+  return S.isDemoMode ? [...S.records, ...S.demoRecords] : S.records;
+}
+function activeReplacements() {
+  return S.isDemoMode ? [...S.replacements, ...(S.demoReplacements||[])] : S.replacements;
+}
+
+// =====================================================================
+// UTILS
+// =====================================================================
+function todayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+function fmtDate(d) { const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtMoney(n) { return '₹'+Number(n).toLocaleString('en-IN'); }
+function fmtNum(n) { return Number(n).toLocaleString('en-IN'); }
+function getRec(id) { return S.receptionists.find(r=>r.id===id); }
+function getRecords(recId) { return activeRecords().filter(r=>r.recId===recId); }
+function getRecord(recId, date) { return activeRecords().find(r=>r.recId===recId&&r.date===date); }
+function shiftColor(s) { return s==='morning'?'#c98a10':s==='evening'?'#d95c20':'#6d3fd4'; }
+function shiftClass(s) { return 'shift-'+s; }
+
+function showToast(msg, type='', dur=2600) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+(type||'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+function openModal(title, body, footer='') {
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=body;
+  document.getElementById('modal-footer').innerHTML=footer;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+
+// CHECKLIST HELPERS
+function getChecklist(recId, date) {
+  const key = recId+'_'+date;
+  if (!S.checklists[key]) S.checklists[key] = [];
+  return S.checklists[key];
+}
+function isTaskDone(recId, date, taskId) { return getChecklist(recId,date).includes(taskId); }
+function toggleTask(recId, date, taskId) {
+  const key=recId+'_'+date;
+  if (!S.checklists[key]) S.checklists[key]=[];
+  const idx=S.checklists[key].indexOf(taskId);
+  if (idx>=0) S.checklists[key].splice(idx,1); else S.checklists[key].push(taskId);
+  saveToStorage();
+  // Re-render checklist inline
+  renderChecklistItems(recId, date);
+  updateTaskNotifDots();
+}
+function isChecklistComplete(recId, date) {
+  const done = computeAutoChecklist(recId, date);
+  return DAILY_TASKS.every(t=>done.includes(t.id));
+}
+function incompleteCount(recId, date) {
+  const done = computeAutoChecklist(recId, date);
+  return DAILY_TASKS.filter(t=>!done.includes(t.id)).length;
+}
+
+// =====================================================================
+// NOTIF DOTS
+// =====================================================================
+function updateTaskNotifDots() {
+  const today = todayStr();
+  const anyIncomplete = S.receptionists.some(r => !isChecklistComplete(r.id, today));
+  const btn = document.getElementById('tab-reception');
+  const existing = btn?.querySelector('.notif-dot');
+  if (anyIncomplete) {
+    if (!existing) { const d=document.createElement('span'); d.className='notif-dot'; btn.appendChild(d); }
+  } else { if (existing) existing.remove(); }
+}
+
+// UPSERT RECORD
+function upsertRecord(recId, patch) {
+  const date = S.viewDate;
+  let rec = S.records.find(r=>r.recId===recId&&r.date===date);
+  if (!rec) {
+    rec = { id:recId+'_'+date, recId, date, shift:getRec(recId).shift, ipd:{}, svc:{}, opd:0, admit:0, discharge:0, money:{}, totalMoney:0, submitted:false };
+    IPD_DEPTS.forEach(d=>rec.ipd[d]=0);
+    SERVICES.forEach(s=>rec.svc[s]=0);
+    S.records.push(rec);
+  }
+  Object.assign(rec, patch);
+  saveToStorage();
+}
+
+// =====================================================================
+// RENDER SYSTEM
+// =====================================================================
+function reRender() {
+  const t = S.mainTab;
+  if (t==='reception') renderReception();
+  else if (t==='replacement') renderReplacement();
+  else if (t==='master') renderMaster();
+  else if (t==='analytics') renderAnalytics();
+  else if (t==='settings') renderSettings();
+  else if (t==='help') renderHelp();
+}
+
+function switchTab(tab) {
+  // Admin tabs require password
+  if (isAdminTab(tab) && !adminUnlocked) {
+    showAdminLoginModal(tab);
+    return;
+  }
+  // Help tab: if admin guide section, require password
+  S.mainTab = tab;
+  document.querySelectorAll('.topbar-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+tab)?.classList.add('active');
+  const sidebar = document.getElementById('sidebar');
+  sidebar.style.display = (tab==='reception') ? '' : 'none';
+  document.getElementById('center').innerHTML='';
+  document.getElementById('rightbar').innerHTML='';
+  reRender();
+}
+
+// ---- ADMIN LOGIN MODAL ----
+function showAdminLoginModal(intendedTab) {
+  openModal('Admin Access Required',`
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="width:48px;height:48px;border-radius:50%;background:var(--blue-light);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px;">🔒</div>
+      <div style="font-size:13px;color:var(--text2);">This section is restricted to administrators.<br>Enter the admin password to continue.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Admin Password</label>
+      <input class="form-input" type="password" id="admin-pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter') verifyAdminPw('${intendedTab}')">
+    </div>
+    <div id="admin-pw-error" style="color:var(--red);font-size:12px;margin-top:6px;display:none;">Incorrect password. Please try again.</div>
+    <div style="margin-top:12px;text-align:center;">
+      <button class="btn btn-sm" style="background:transparent;border:none;color:var(--blue);cursor:pointer;font-size:12px;" onclick="showChangePasswordModal()">Forgot password? Change password</button>
+    </div>
+  `,`
+    <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="verifyAdminPw('${intendedTab}')">Unlock</button>
+  `);
+  setTimeout(()=>document.getElementById('admin-pw-input')?.focus(), 100);
+}
+
+function verifyAdminPw(intendedTab) {
+  const input = document.getElementById('admin-pw-input')?.value;
+  if (input === adminPw) {
+    adminUnlocked = true;
+    closeModal();
+    showToast('Admin access granted','success');
+    document.getElementById('admin-lock-btn').style.display='inline';
+    if (intendedTab === '_sidebar') {
+      // Just unlock sidebar actions without switching tab
+      renderSidebar();
+      return;
+    }
+    // Actually switch tab now
+    S.mainTab = intendedTab;
+    document.querySelectorAll('.topbar-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-'+intendedTab)?.classList.add('active');
+    const sidebar = document.getElementById('sidebar');
+    sidebar.style.display = (intendedTab==='reception') ? '' : 'none';
+    document.getElementById('center').innerHTML='';
+    document.getElementById('rightbar').innerHTML='';
+    reRender();
+  } else {
+    const err = document.getElementById('admin-pw-error');
+    if (err) { err.style.display='block'; err.textContent='Incorrect password. Please try again.'; }
+    document.getElementById('admin-pw-input').value='';
+  }
+}
+
+function lockAdmin() {
+  adminUnlocked = false;
+  document.getElementById('admin-lock-btn').style.display='none';
+  renderSidebar(); // hide edit/delete buttons from sidebar
+  if (ADMIN_TABS.includes(S.mainTab)) {
+    switchTab('reception');
+  }
+  showToast('Admin session locked');
+}
+
+// ---- CHANGE PASSWORD MODAL ----
+function showChangePasswordModal() {
+  closeModal();
+  openModal('Change Admin Password',`
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.65;">To change the admin password, you must first answer the security question.</div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">Security Question: What is your group name?</label>
+      <input class="form-input" id="sec-answer" placeholder="Enter your answer">
+    </div>
+    <div id="sec-error" style="color:var(--red);font-size:12px;margin-bottom:8px;display:none;">Incorrect answer.</div>
+    <div id="new-pw-section" style="display:none;">
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">New Password</label>
+        <input class="form-input" type="password" id="new-pw" placeholder="New password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm New Password</label>
+        <input class="form-input" type="password" id="confirm-pw" placeholder="Confirm password">
+      </div>
+      <div id="pw-match-error" style="color:var(--red);font-size:12px;margin-top:6px;display:none;">Passwords do not match.</div>
+    </div>
+  `,`
+    <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" id="sec-btn" onclick="verifySecurityAnswer()">Verify Answer</button>
+  `);
+}
+
+function verifySecurityAnswer() {
+  const answer = document.getElementById('sec-answer')?.value?.trim();
+  if (answer?.toLowerCase() === 'originals') {
+    document.getElementById('sec-error').style.display='none';
+    document.getElementById('sec-answer').disabled=true;
+    document.getElementById('new-pw-section').style.display='block';
+    document.getElementById('sec-btn').textContent='Set New Password';
+    document.getElementById('sec-btn').onclick=setNewPassword;
+  } else {
+    document.getElementById('sec-error').style.display='block';
+  }
+}
+
+function setNewPassword() {
+  const pw = document.getElementById('new-pw')?.value;
+  const confirm = document.getElementById('confirm-pw')?.value;
+  if (!pw || pw.length < 4) { showToast('Password too short','warning'); return; }
+  if (pw !== confirm) {
+    document.getElementById('pw-match-error').style.display='block';
+    return;
+  }
+  adminPw = pw;
+  closeModal();
+  showToast('Password changed successfully!','success');
+}
+
+function setSidebarView(view) {
+  S.currentView = view;
+  document.querySelectorAll('.sidebar-item').forEach(el=>el.classList.remove('active'));
+  const map={profile:0,checklist:1,ipd:2,opd:3,services:4,collection:5,history:6};
+  const items=document.querySelectorAll('.sidebar-item');
+  if (items[map[view]]) items[map[view]].classList.add('active');
+  renderReceptionCenter();
+}
+
+function switchRec(id) {
+  S.currentRec = id;
+  document.querySelectorAll('.rec-mini').forEach(el=>el.classList.toggle('active',el.dataset.id===id));
+  if (S.mainTab==='reception') renderReceptionCenter();
+  updateShiftBadge();
+}
+
+function updateShiftBadge() {
+  const rec=getRec(S.currentRec)||(S.receptionists[0]||null);
+  if (!rec) { const b=document.getElementById('active-shift-badge'); if(b){b.textContent='—';b.className='shift-badge';} return; }
+  if (!rec) return;
+  const badge=document.getElementById('active-shift-badge');
+  badge.textContent=rec.shift.charAt(0).toUpperCase()+rec.shift.slice(1);
+  badge.className='shift-badge '+shiftClass(rec.shift);
+}
+
+// =====================================================================
+// DATE NAVIGATOR COMPONENT
+// =====================================================================
+function dateNavHTML() {
+  return `<div class="date-nav">
+    <span class="date-nav-label">Viewing date:</span>
+    <input type="date" id="view-date-input" value="${S.viewDate}" max="${todayStr()}" onchange="setViewDate(this.value)">
+    <button class="date-nav-btn" onclick="shiftDate(-1)">◀ Prev</button>
+    <button class="date-nav-btn" onclick="shiftDate(1)">Next ▶</button>
+    <button class="date-nav-btn today-btn" onclick="setViewDate('${todayStr()}')">Today</button>
+    <span style="font-size:12px;color:var(--text3);margin-left:4px;">${S.viewDate===todayStr()?'(Today)':fmtDate(S.viewDate)}</span>
+  </div>`;
+}
+
+function setViewDate(val) {
+  if (!val) return;
+  S.viewDate = val;
+  renderReceptionCenter();
+}
+
+function shiftDate(dir) {
+  // Parse parts directly to avoid UTC/local timezone mismatch
+  const parts = S.viewDate.split('-');
+  const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+  d.setDate(d.getDate() + dir);
+  // Format back as YYYY-MM-DD using local date parts
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  const ds = y+'-'+m+'-'+day;
+  if (ds <= todayStr()) {
+    S.viewDate = ds;
+    renderReceptionCenter();
+  } else {
+    showToast('Cannot view future dates');
+  }
+}
+
+// =====================================================================
+// SIDEBAR RENDER
+// =====================================================================
+function renderSidebar() {
+  const today = todayStr();
+  const recItems = S.receptionists.map(r => {
+    const incomplete = !isChecklistComplete(r.id, today);
+    const isActive = r.id === S.currentRec;
+    return `
+      <div class="rec-mini ${isActive?'active':''}" data-id="${r.id}" style="position:relative;padding-bottom:${adminUnlocked?'30px':'7px'};">
+        <div onclick="switchRec('${r.id}')" style="cursor:pointer;">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <div style="width:24px;height:24px;border-radius:7px;background:${r.color};display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:700;flex-shrink:0;">${r.initial}</div>
+            <div style="flex:1;min-width:0;">
+              <div class="rec-mini-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.name}</div>
+              <div class="rec-mini-row">
+                <span class="rec-mini-shift"><span class="rec-mini-dot" style="background:${shiftColor(r.shift)}"></span>${r.shift} · ${r.shiftStart}–${r.shiftEnd}</span>
+              </div>
+            </div>
+            ${incomplete ? `<span class="rec-incomplete-badge" style="flex-shrink:0;">⚠</span>` : `<span style="color:var(--green);font-size:11px;flex-shrink:0;">✓</span>`}
+          </div>
+        </div>
+        ${adminUnlocked ? `
+          <div style="position:absolute;bottom:5px;left:9px;right:9px;display:flex;gap:4px;">
+            <button onclick="event.stopPropagation();openEditProfile('${r.id}')" style="flex:1;font-size:10px;padding:2px 0;border-radius:4px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;" title="Edit">Edit</button>
+            <button onclick="event.stopPropagation();sidebarDeleteRec('${r.id}')" style="flex:1;font-size:10px;padding:2px 0;border-radius:4px;border:1px solid #f8c0c0;background:var(--red-light);color:var(--red);cursor:pointer;font-family:inherit;" title="Delete">Delete</button>
+          </div>
+        ` : ''}
+      </div>`;
+  }).join('');
+
+  const rec = getRec(S.currentRec);
+  const incToday = incompleteCount(rec?.id, today);
+
+  document.getElementById('sidebar').innerHTML = `
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigation</div>
+      <button class="sidebar-item ${S.currentView==='profile'?'active':''}" onclick="setSidebarView('profile')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z"/></svg>Profile & Overview
+      </button>
+      <button class="sidebar-item ${S.currentView==='checklist'?'active':''}" onclick="setSidebarView('checklist')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1H2zm0 3h12v1H2zm0 3h8v1H2zm0 3h6v1H2zm10-1l1.5 1.5L16 8l-.7-.7-1.8 1.8-.8-.8-.7.7L13 11z"/></svg>Daily Checklist
+        ${incToday>0?`<span class="task-alert">${incToday}</span>`:''}
+      </button>
+      <button class="sidebar-item ${S.currentView==='ipd'?'active':''}" onclick="setSidebarView('ipd')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm5 2v2H5v1h2v2h1v-2h2V7H8V5H7z"/></svg>IPD Patients
+      </button>
+      <button class="sidebar-item ${S.currentView==='opd'?'active':''}" onclick="setSidebarView('opd')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10a1 1 0 011 1v1H2V3a1 1 0 011-1zM2 6h12v7a1 1 0 01-1 1H3a1 1 0 01-1-1V6zm3 2v1h6V8H5zm0 3v1h4v-1H5z"/></svg>OPD & Movements
+      </button>
+      <button class="sidebar-item ${S.currentView==='services'?'active':''}" onclick="setSidebarView('services')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M7 1v14h2V1H7zM1 5h4v2H1V5zm10 0h4v2h-4V5zm-4 6H1v2h6v-2zm4 0h4v2h-4v-2z"/></svg>Other Services
+      </button>
+      <button class="sidebar-item ${S.currentView==='collection'?'active':''}" onclick="setSidebarView('collection')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 9.5h-1.5V7.25H5.5v-1.5h1.75V4h1.5v1.75H10.5v1.5H8.75V10.5z"/></svg>Money Collection
+      </button>
+      <button class="sidebar-item ${S.currentView==='history'?'active':''}" onclick="setSidebarView('history')">
+        <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.5 7.5h-3v-1h2V4h1v4.5z"/></svg>My Records
+      </button>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div style="padding:10px 10px 4px;display:flex;align-items:center;justify-content:space-between;">
+      <div class="sidebar-label" style="margin-bottom:0;">Receptionists</div>
+      ${adminUnlocked
+        ? `<button onclick="openAddReceptionistModal()" style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;border:1px solid var(--blue-mid);background:var(--blue-light);color:var(--blue);cursor:pointer;font-family:inherit;white-space:nowrap;">+ Add</button>`
+        : `<button onclick="sidebarRequestAdminForRec()" style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text3);cursor:pointer;font-family:inherit;" title="Admin login required">🔒 Admin</button>`
+      }
+    </div>
+    <div class="rec-cards">${recItems}</div>
+    ${adminUnlocked ? `<div style="padding:4px 10px 10px;font-size:10px;color:var(--green);text-align:center;">🔓 Admin mode — edit/delete enabled</div>` : ''}
+  `;
+}
+
+function sidebarRequestAdminForRec() {
+  showAdminLoginModal('_sidebar');
+}
+
+function sidebarDeleteRec(recId) {
+  confirmDeleteReceptionist(recId);
+}
+
+// =====================================================================
+// RECEPTION TAB
+// =====================================================================
+function renderReception() {
+  renderSidebar();
+  renderReceptionCenter();
+  updateShiftBadge();
+  updateTaskNotifDots();
+}
+
+function renderReceptionCenter() {
+  renderSidebar(); // refresh task badges
+  if (S.receptionists.length === 0) {
+    document.getElementById('rightbar').innerHTML = '';
+    document.getElementById('center').innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;gap:18px;text-align:center;padding:40px;">
+        <div style="width:64px;height:64px;border-radius:18px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:28px;">🏥</div>
+        <div>
+          <div style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:7px;">No Receptionists Added Yet</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7;max-width:360px;">Go to <strong>Settings</strong> tab (admin login required) to add your first receptionist. All fields are pre-filled — just enter the name, phone and assign a shift.</div>
+        </div>
+        <button class="btn btn-primary" onclick="switchTab('settings')">Go to Settings →</button>
+      </div>`;
+    return;
+  }
+  if (!getRec(S.currentRec)) S.currentRec = S.receptionists[0].id;
+  const rec = getRec(S.currentRec);
+  const right = document.getElementById('rightbar');
+  right.innerHTML = renderRight(rec);
+  const center = document.getElementById('center');
+  if (S.currentView==='profile') center.innerHTML = renderProfile(rec);
+  else if (S.currentView==='checklist') center.innerHTML = renderChecklist(rec);
+  else if (S.currentView==='ipd') center.innerHTML = renderIPD(rec);
+  else if (S.currentView==='opd') center.innerHTML = renderOPD(rec);
+  else if (S.currentView==='services') center.innerHTML = renderServices(rec);
+  else if (S.currentView==='collection') { center.innerHTML = renderCollection(rec); setTimeout(calcCollectionTotal, 30); }
+  else if (S.currentView==='history') center.innerHTML = renderHistory(rec);
+}
+
+function renderRight(rec) {
+  if (!rec) return '';
+  const recs = getRecords(rec.id);
+  const mo = new Date().toISOString().slice(0,7);
+  const monthRecs = recs.filter(r=>r.date.startsWith(mo));
+  const totalMoney = monthRecs.reduce((s,r)=>s+r.totalMoney,0);
+  const totalPts = monthRecs.reduce((s,r)=>s+Object.values(r.ipd).reduce((a,b)=>a+b,0)+r.opd,0);
+  const dayRec = getRecord(rec.id, S.viewDate);
+  const today = todayStr();
+  const viewingDate = S.viewDate;
+  const incomplete = incompleteCount(rec.id, viewingDate);
+  const todayDone = computeAutoChecklist(rec.id, viewingDate);
+
+  return `
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;">${rec.name.split(' ')[0]}'s Month</div>
+    <div class="card" style="padding:11px;">
+      <div class="mini-stat"><span class="mini-stat-label">Days Updated</span><span class="mini-stat-val" style="color:var(--blue)">${monthRecs.length}</span></div>
+      <div class="mini-stat"><span class="mini-stat-label">Total Patients</span><span class="mini-stat-val" style="color:var(--teal)">${fmtNum(totalPts)}</span></div>
+      <div class="mini-stat"><span class="mini-stat-label">Total Collection</span><span class="mini-stat-val" style="color:var(--green)">${fmtMoney(totalMoney)}</span></div>
+      <div class="mini-stat"><span class="mini-stat-label">Avg/Day</span><span class="mini-stat-val">${monthRecs.length?fmtMoney(Math.round(totalMoney/monthRecs.length)):'—'}</span></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin:10px 0 8px;">Viewing: ${S.viewDate===todayStr()?'Today':fmtDate(S.viewDate)}</div>
+    <div class="card" style="padding:11px;">
+      ${dayRec ? `
+        <div class="mini-stat"><span class="mini-stat-label">IPD Total</span><span class="mini-stat-val">${Object.values(dayRec.ipd).reduce((a,b)=>a+b,0)}</span></div>
+        <div class="mini-stat"><span class="mini-stat-label">OPD</span><span class="mini-stat-val">${dayRec.opd}</span></div>
+        <div class="mini-stat"><span class="mini-stat-label">Admissions</span><span class="mini-stat-val">${dayRec.admit}</span></div>
+        <div class="mini-stat"><span class="mini-stat-label">Discharges</span><span class="mini-stat-val">${dayRec.discharge}</span></div>
+        <div class="mini-stat"><span class="mini-stat-label">Collection</span><span class="mini-stat-val" style="color:var(--green)">${fmtMoney(dayRec.totalMoney)}</span></div>
+      ` : `<div style="text-align:center;padding:14px 0;color:var(--text3);font-size:12px;">No data for this date yet.</div>`}
+    </div>
+    <div style="font-size:13px;font-weight:600;margin:10px 0 8px;">${S.viewDate===today?'Today\'s Tasks':'Tasks — '+fmtDate(S.viewDate)}</div>
+    <div class="card" style="padding:11px;">
+      <div class="mini-stat" style="margin-bottom:8px;"><span class="mini-stat-label">Completed</span><span class="mini-stat-val" style="color:${incomplete===0?'var(--green)':'var(--red)'}">${DAILY_TASKS.length - incomplete}/${DAILY_TASKS.length}</span></div>
+      ${DAILY_TASKS.map(task => {
+        const isDone = todayDone.includes(task.id);
+        return '<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--border);">'
+          + '<div style="width:14px;height:14px;border-radius:50%;flex-shrink:0;border:1.5px solid '+(isDone?'var(--green)':'var(--border2)')+';background:'+(isDone?'var(--green)':'transparent')+';display:flex;align-items:center;justify-content:center;">'
+          + (isDone?'<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 4l2 2L6.5 2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')
+          + '</div>'
+          + '<span style="font-size:11px;color:'+(isDone?'var(--text3)':'var(--text2)')+';">' + task.cat + '</span>'
+          + '<span style="font-size:10px;color:'+(isDone?'var(--green)':'var(--text3)')+';">'+(isDone?'✓':'')+'</span>'
+          + '</div>';
+      }).join('')}
+      ${incomplete>0 ? `<div style="font-size:11px;color:var(--red);margin-top:8px;font-weight:500;">⚠ ${incomplete} pending</div>` : `<div style="font-size:11px;color:var(--green);margin-top:8px;font-weight:500;">✓ All tasks complete!</div>`}
+    </div>
+    <div style="font-size:13px;font-weight:600;margin:10px 0 8px;">Shift</div>
+    <div class="card" style="padding:11px;">
+      <div class="mini-stat"><span class="mini-stat-label">Type</span><span class="mini-stat-val"><span class="badge ${shiftClass(rec.shift)}">${rec.shift}</span></span></div>
+      <div class="mini-stat"><span class="mini-stat-label">Timings</span><span class="mini-stat-val" style="font-size:12px;">${rec.shiftStart}–${rec.shiftEnd}</span></div>
+      <div style="margin-top:8px;">
+        <div style="font-size:11px;color:var(--text3);font-weight:500;margin-bottom:5px;">Change Shift Type</div>
+        <div class="shift-selector">
+          ${['morning','evening','night'].map(s=>`<button class="shift-btn ${rec.shift===s?'active-'+s:''}" onclick="changeShift('${rec.id}','${s}')">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ---------------------- PROFILE VIEW ----------------------
+function renderProfile(rec) {
+  const recs = getRecords(rec.id);
+  const mo = new Date().toISOString().slice(0,7);
+  const monthRecs = recs.filter(r=>r.date.startsWith(mo));
+  const totalMoney = monthRecs.reduce((s,r)=>s+r.totalMoney,0);
+  const totalPts = monthRecs.reduce((s,r)=>s+Object.values(r.ipd).reduce((a,b)=>a+b,0)+r.opd,0);
+  const replacedCount = activeReplacements().filter(r=>r.originalRecId===rec.id).length;
+  const today = todayStr();
+  const incomplete = incompleteCount(rec.id, S.viewDate);
+
+  return `
+    ${dateNavHTML()}
+    <div class="profile-header">
+      <div class="avatar" style="background:${rec.color};width:50px;height:50px;font-size:18px;">${rec.initial}</div>
+      <div style="flex:1;">
+        <div class="profile-name">${rec.name}</div>
+        <div class="profile-meta">${rec.phone} · ${rec.email}</div>
+        <div class="profile-badges">
+          <span class="badge ${shiftClass(rec.shift)}">${rec.shift} shift</span>
+          <span class="badge" style="background:var(--teal-light);color:var(--teal);">${rec.shiftStart}–${rec.shiftEnd}</span>
+          <span class="badge" style="background:var(--green-light);color:var(--green);">Active</span>
+          <span class="badge" style="background:var(--surface2);color:var(--text2);">Since ${fmtDate(rec.joined)}</span>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="openEditProfile('${rec.id}')">Edit Profile</button>
+    </div>
+    ${incomplete>0 ? `<div class="incomplete-warning"><span>⚠</span><strong>${incomplete} task${incomplete>1?'s':''} incomplete${S.viewDate===today?' for today':' for '+fmtDate(S.viewDate)}.</strong>${S.viewDate===today?' Go to Daily Checklist to mark tasks done.':''}</div>` : `<div class="complete-success"><span>✓</span>All daily tasks completed${S.viewDate===today?' for today':' for '+fmtDate(S.viewDate)}. Great work!</div>`}
+    <div class="stat-grid stat-grid-4">
+      <div class="stat-card stat-blue"><div class="stat-label">Days Updated</div><div class="stat-value" style="color:var(--blue)">${monthRecs.length}</div><div class="stat-sub">This month</div></div>
+      <div class="stat-card stat-teal"><div class="stat-label">Total Patients</div><div class="stat-value" style="color:var(--teal)">${fmtNum(totalPts)}</div><div class="stat-sub">IPD + OPD</div></div>
+      <div class="stat-card stat-green"><div class="stat-label">Money Collected</div><div class="stat-value" style="color:var(--green);font-size:18px;">${fmtMoney(totalMoney)}</div><div class="stat-sub">This month</div></div>
+      <div class="stat-card stat-amber"><div class="stat-label">Replacements</div><div class="stat-value" style="color:var(--amber)">${replacedCount}</div><div class="stat-sub">Times replaced</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-ht">Recent Activity</div><button class="btn btn-secondary btn-sm" onclick="setSidebarView('history')">View All</button></div>
+      ${recs.slice(-5).reverse().map(r=>`
+        <div class="record-item">
+          <div class="record-date">${fmtDate(r.date)} · <span class="badge ${shiftClass(r.shift)}" style="font-size:10px;">${r.shift}</span></div>
+          <div class="record-summary">IPD: ${Object.values(r.ipd).reduce((a,b)=>a+b,0)} · OPD: ${r.opd} · Admit: ${r.admit} · Discharge: ${r.discharge} · Collected: ${fmtMoney(r.totalMoney)}</div>
+        </div>
+      `).join('') || '<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px 0;">No records yet.</div>'}
+    </div>
+  `;
+}
+
+// ---------------------- CHECKLIST VIEW ----------------------
+function renderChecklist(rec) {
+  const today = todayStr();
+  const done = computeAutoChecklist(rec.id, S.viewDate);
+  const totalDone = done.length;
+  const incomplete = DAILY_TASKS.length - totalDone;
+  const isToday = S.viewDate === today;
+
+  const taskItems = DAILY_TASKS.map((task, i) => {
+    const isDone = done.includes(task.id);
+    return `
+      <div style="
+        display:flex;align-items:flex-start;gap:13px;
+        padding:12px 14px;border-radius:var(--radius);margin-bottom:8px;
+        border:1.5px solid ${isDone ? '#a3e0b8' : 'var(--border2)'};
+        background:${isDone ? 'var(--green-light)' : 'var(--surface)'};
+        transition:all .3s ease;
+      ">
+        <div style="
+          width:26px;height:26px;border-radius:50%;flex-shrink:0;margin-top:1px;
+          border:2px solid ${isDone ? 'var(--green)' : 'var(--border2)'};
+          background:${isDone ? 'var(--green)' : 'var(--surface2)'};
+          display:flex;align-items:center;justify-content:center;
+          transition:all .3s ease;
+        ">
+          ${isDone
+            ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5L9.5 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+            : `<span style="font-size:11px;font-weight:600;color:var(--text3);">${i+1}</span>`
+          }
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="
+            font-size:13px;font-weight:${isDone?'400':'500'};
+            color:${isDone?'var(--text3)':'var(--text)'};
+            text-decoration:${isDone?'line-through':'none'};
+            line-height:1.5;
+          ">${isDone ? '' : `<span style="color:var(--text3);font-weight:400;margin-right:6px;">${i+1}.</span>`}${task.text}</div>
+          ${!isDone
+            ? `<div style="font-size:11px;color:var(--blue);margin-top:4px;display:flex;align-items:center;gap:4px;">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v4l2.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.3"/></svg>
+                ${task.hint}
+              </div>`
+            : `<div style="font-size:11px;color:var(--green);margin-top:3px;font-weight:500;">✓ Completed</div>`
+          }
+        </div>
+        <span style="
+          flex-shrink:0;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;
+          background:${isDone ? '#fff' : task.catColor+'18'};
+          color:${isDone ? 'var(--green)' : task.catColor};
+          border:1px solid ${isDone ? '#a3e0b8' : task.catColor+'30'};
+        ">${isDone ? 'Done' : task.cat}</span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    ${dateNavHTML()}
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-ht">Daily Task Checklist — ${fmtDate(S.viewDate)}</div>
+        <span class="badge" style="
+          background:${incomplete===0?'var(--green-light)':'var(--red-light)'};
+          color:${incomplete===0?'var(--green)':'var(--red)'};
+          font-size:12px;padding:4px 10px;
+        ">${totalDone} / ${DAILY_TASKS.length} done</span>
+      </div>
+
+      ${incomplete > 0
+        ? `<div class="incomplete-warning" style="margin-bottom:12px;">
+             <span>⚠</span>
+             <strong>${incomplete} task${incomplete>1?'s':''} still pending${isToday?' for today':' for '+fmtDate(S.viewDate)}.</strong>
+             Go to the section mentioned below each task, enter the data, and click Save.
+           </div>`
+        : `<div class="complete-success" style="margin-bottom:12px;">
+             <span>✓</span>
+             All 8 tasks completed${isToday?' for today':' for '+fmtDate(S.viewDate)}. Excellent work!
+           </div>`
+      }
+
+      <div style="font-size:12px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);padding:9px 12px;border-radius:var(--radius-sm);margin-bottom:14px;line-height:1.6;">
+        ℹ &nbsp;Tasks turn <strong style="color:var(--green);">green</strong> automatically once you save the data. You cannot tick them manually — complete the actual work in each section to mark them done. Even if there are 0 patients, you must enter <strong>0</strong> and save.
+      </div>
+
+      ${taskItems}
+
+      ${!isToday ? `<div style="font-size:12px;color:var(--text3);margin-top:8px;font-style:italic;text-align:center;">Viewing data for ${fmtDate(S.viewDate)}</div>` : ''}
+    </div>
+  `;
+}
+
+// ---------------------- IPD VIEW ----------------------
+function renderIPD(rec) {
+  const dayRec = getRecord(rec.id, S.viewDate) || { ipd:{} };
+  return `
+    ${dateNavHTML()}
+    <div class="card">
+      <div class="sec-title"><span class="sec-dot" style="background:var(--blue)"></span>IPD Department Counts — ${fmtDate(S.viewDate)}</div>
+      <div class="form-grid">
+        ${IPD_DEPTS.map(dep=>`
+          <div class="form-group">
+            <label class="form-label">${dep}</label>
+            <input class="form-input" type="number" min="0" id="ipd_${dep.replace(/ /g,'_')}" value="${dayRec.ipd[dep]||0}" oninput="updateIPDTotal()">
+          </div>
+        `).join('')}
+      </div>
+      <div class="totals-row" style="margin-top:12px;">
+        <div class="totals-item"><div class="totals-label">Total IPD Patients</div><div class="totals-value" id="ipd-total">0</div></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveIPD('${rec.id}')">Save IPD Data</button>
+      <button class="btn btn-secondary" onclick="setSidebarView('opd')">Next: OPD →</button>
+    </div>
+  `;
+  setTimeout(updateIPDTotal, 30);
+}
+
+function updateIPDTotal() {
+  let t=0; IPD_DEPTS.forEach(d=>{ const el=document.getElementById('ipd_'+d.replace(/ /g,'_')); if(el) t+=parseInt(el.value)||0; });
+  const el=document.getElementById('ipd-total'); if(el) el.textContent=t;
+}
+
+function saveIPD(recId) {
+  const ipd={}; IPD_DEPTS.forEach(dep=>{ const el=document.getElementById('ipd_'+dep.replace(/ /g,'_')); ipd[dep]=el?parseInt(el.value)||0:0; });
+  upsertRecord(recId, {ipd, _ipdSaved:true});
+  showToast('IPD data saved — Task 1 ✓','success');
+}
+
+// ---------------------- OPD VIEW ----------------------
+function renderOPD(rec) {
+  const dayRec = getRecord(rec.id, S.viewDate) || { opd:0, admit:0, discharge:0 };
+  return `
+    ${dateNavHTML()}
+    <div class="card">
+      <div class="sec-title"><span class="sec-dot" style="background:var(--teal)"></span>OPD & Ward Movements — ${fmtDate(S.viewDate)}</div>
+      <div class="form-grid-3">
+        <div class="form-group"><label class="form-label">OPD Count</label><input class="form-input" type="number" min="0" id="opd_count" value="${dayRec.opd||0}"></div>
+        <div class="form-group"><label class="form-label">Admissions</label><input class="form-input" type="number" min="0" id="admit_count" value="${dayRec.admit||0}"></div>
+        <div class="form-group"><label class="form-label">Discharges</label><input class="form-input" type="number" min="0" id="discharge_count" value="${dayRec.discharge||0}"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveOPD('${rec.id}')">Save OPD Data</button>
+      <button class="btn btn-secondary" onclick="setSidebarView('services')">Next: Services →</button>
+    </div>
+  `;
+}
+
+function saveOPD(recId) {
+  const opd=parseInt(document.getElementById('opd_count')?.value)||0;
+  const admit=parseInt(document.getElementById('admit_count')?.value)||0;
+  const discharge=parseInt(document.getElementById('discharge_count')?.value)||0;
+  upsertRecord(recId, {opd,admit,discharge,_opdSaved:true});
+  showToast('OPD data saved — Tasks 2 & 3 ✓','success');
+}
+
+// ---------------------- SERVICES VIEW ----------------------
+function renderServices(rec) {
+  const dayRec = getRecord(rec.id, S.viewDate) || { svc:{} };
+  return `
+    ${dateNavHTML()}
+    <div class="card">
+      <div class="sec-title"><span class="sec-dot" style="background:var(--coral)"></span>Other Services — ${fmtDate(S.viewDate)}</div>
+      <div class="form-grid">
+        ${SERVICES.map(s=>`<div class="form-group"><label class="form-label">${s}</label><input class="form-input" type="number" min="0" id="svc_${s.replace(/ /g,'_')}" value="${dayRec.svc[s]||0}"></div>`).join('')}
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveServices('${rec.id}')">Save Services</button>
+      <button class="btn btn-secondary" onclick="setSidebarView('collection')">Next: Money →</button>
+    </div>
+  `;
+}
+
+function saveServices(recId) {
+  const svc={}; SERVICES.forEach(s=>{ const el=document.getElementById('svc_'+s.replace(/ /g,'_')); svc[s]=el?parseInt(el.value)||0:0; });
+  upsertRecord(recId, {svc, _svcSaved:true});
+  showToast('Services saved — Task 4 ✓','success');
+}
+
+// ---------------------- COLLECTION VIEW ----------------------
+function renderCollection(rec) {
+  const dayRec = getRecord(rec.id, S.viewDate) || { money:{}, ipd:{}, svc:{}, opd:0 };
+  return `
+    ${dateNavHTML()}
+    <div class="card">
+      <div class="sec-title"><span class="sec-dot" style="background:var(--green)"></span>IPD Collection — ${fmtDate(S.viewDate)}</div>
+      <table class="dept-table">
+        <thead><tr><th>Department</th><th style="text-align:right;">Amount (₹)</th></tr></thead>
+        <tbody>${IPD_DEPTS.map(dep=>`<tr><td><div class="dept-row-label">${dep}</div><div class="dept-row-sub">Patients: ${dayRec.ipd[dep]||0}</div></td><td><input class="amount-input" type="number" min="0" id="mc_ipd_${dep.replace(/ /g,'_')}" value="${dayRec.money['ipd_'+dep]||0}" oninput="calcCollectionTotal()"></td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="sec-title"><span class="sec-dot" style="background:var(--teal)"></span>OPD Collection</div>
+      <table class="dept-table">
+        <thead><tr><th>Service</th><th style="text-align:right;">Amount (₹)</th></tr></thead>
+        <tbody><tr><td><div class="dept-row-label">OPD</div><div class="dept-row-sub">Patients: ${dayRec.opd||0}</div></td><td><input class="amount-input" type="number" min="0" id="mc_opd" value="${dayRec.money['opd']||0}" oninput="calcCollectionTotal()"></td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="sec-title"><span class="sec-dot" style="background:var(--amber)"></span>Other Services Collection</div>
+      <table class="dept-table">
+        <thead><tr><th>Service</th><th style="text-align:right;">Amount (₹)</th></tr></thead>
+        <tbody>${SERVICES.map(s=>`<tr><td><div class="dept-row-label">${s}</div><div class="dept-row-sub">Count: ${dayRec.svc[s]||0}</div></td><td><input class="amount-input" type="number" min="0" id="mc_svc_${s.replace(/ /g,'_')}" value="${dayRec.money['svc_'+s]||0}" oninput="calcCollectionTotal()"></td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <div class="totals-row" id="mc-totals">
+      <div class="totals-item"><div class="totals-label">Total Collection</div><div class="totals-value" id="mc-total">${fmtMoney(dayRec.totalMoney||0)}</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="saveCollection('${rec.id}')">Submit Day's Record</button>
+    </div>
+  `;
+}
+
+function calcCollectionTotal() {
+  let t=0;
+  IPD_DEPTS.forEach(dep=>{ const el=document.getElementById('mc_ipd_'+dep.replace(/ /g,'_')); t+=el?parseInt(el.value)||0:0; });
+  SERVICES.forEach(s=>{ const el=document.getElementById('mc_svc_'+s.replace(/ /g,'_')); t+=el?parseInt(el.value)||0:0; });
+  const opd=document.getElementById('mc_opd'); t+=opd?parseInt(opd.value)||0:0;
+  const el=document.getElementById('mc-total'); if(el) el.textContent=fmtMoney(t);
+}
+
+function saveCollection(recId) {
+  const money={}; let total=0;
+  IPD_DEPTS.forEach(dep=>{ const el=document.getElementById('mc_ipd_'+dep.replace(/ /g,'_')); money['ipd_'+dep]=el?parseInt(el.value)||0:0; total+=money['ipd_'+dep]; });
+  SERVICES.forEach(s=>{ const el=document.getElementById('mc_svc_'+s.replace(/ /g,'_')); money['svc_'+s]=el?parseInt(el.value)||0:0; total+=money['svc_'+s]; });
+  const opd=document.getElementById('mc_opd'); money['opd']=opd?parseInt(opd.value)||0:0; total+=money['opd'];
+  upsertRecord(recId, {money,totalMoney:total,submitted:true,_moneySaved:true});
+  showToast('Day record submitted — Tasks 5,6,7,8 ✓','success');
+  renderReceptionCenter();
+}
+
+// ---------------------- HISTORY VIEW ----------------------
+function renderHistory(rec) {
+  const recs = getRecords(rec.id).slice().reverse();
+  return `
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-ht">All Records — ${rec.name}</div>
+        <button class="btn btn-secondary btn-sm" onclick="exportRecords('${rec.id}')">⬇ Export Excel</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Shift</th><th>Total IPD</th><th>OPD</th><th>Admit</th><th>Discharge</th><th>Collection</th><th>Status</th></tr></thead>
+          <tbody>${recs.map(r=>`
+            <tr>
+              <td class="mono">${fmtDate(r.date)}</td>
+              <td><span class="badge ${shiftClass(r.shift)}">${r.shift}</span></td>
+              <td class="mono">${Object.values(r.ipd).reduce((a,b)=>a+b,0)}</td>
+              <td class="mono">${r.opd}</td>
+              <td class="mono">${r.admit}</td>
+              <td class="mono">${r.discharge}</td>
+              <td class="mono">${fmtMoney(r.totalMoney)}</td>
+              <td><span class="badge" style="background:${r.submitted?'var(--green-light)':'var(--amber-light)'};color:${r.submitted?'var(--green)':'var(--amber)'};">${r.submitted?'Submitted':'Draft'}</span></td>
+            </tr>
+          `).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:16px;">No records yet.</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function changeShift(recId, shift) {
+  const r=RECEPTIONISTS_mut.find(x=>x.id===recId)||getRec(recId);
+  getRec(recId).shift=shift;
+  saveToStorage(); renderReceptionCenter(); updateShiftBadge();
+  showToast('Shift updated to '+shift);
+}
+const RECEPTIONISTS_mut = S.receptionists; // alias
+
+// =====================================================================
+// REPLACEMENT TAB
+// =====================================================================
+function renderReplacement() {
+  const center = document.getElementById('center');
+  const right = document.getElementById('rightbar');
+  right.innerHTML = `
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Replacement Summary</div>
+    <div class="card" style="padding:11px;">
+      <div class="mini-stat"><span class="mini-stat-label">Total Replacements</span><span class="mini-stat-val">${S.replacements.length}</span></div>
+      ${S.receptionists.map(r=>{ const cnt=activeReplacements().filter(rep=>rep.originalRecId===r.id).length; return `<div class="mini-stat"><span class="mini-stat-label">${r.name.split(' ')[0]}</span><span class="mini-stat-val">${cnt}</span></div>`; }).join('')}
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-top:12px;line-height:1.65;">When submitted, the original receptionist's profile is automatically updated with replacement info.</div>
+  `;
+  center.innerHTML = `
+    <div class="rep-banner">⚠ This section is for temporary replacement staff. All records are tagged separately and linked to the original receptionist.</div>
+    <div class="card">
+      <div class="card-ht" style="margin-bottom:14px;">New Replacement Entry</div>
+      <div class="form-grid" style="margin-bottom:12px;">
+        <div class="form-group"><label class="form-label">Replacement Staff Name</label><input class="form-input" id="rep_name" placeholder="Full name"></div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="rep_date" value="${todayStr()}" max="${todayStr()}"></div>
+        <div class="form-group"><label class="form-label">Receptionist Being Replaced</label><select class="form-input" id="rep_original">${S.receptionists.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Shift</label><select class="form-input" id="rep_shift"><option value="morning">Morning</option><option value="evening">Evening</option><option value="night">Night</option></select></div>
+        <div class="form-group"><label class="form-label">Start Time</label><input class="form-input" type="time" id="rep_start" value="08:00"></div>
+        <div class="form-group"><label class="form-label">End Time</label><input class="form-input" type="time" id="rep_end" value="14:00"></div>
+      </div>
+      <div class="sec-title"><span class="sec-dot" style="background:var(--blue)"></span>IPD Counts</div>
+      <div class="form-grid" style="margin-bottom:12px;">${IPD_DEPTS.map(dep=>`<div class="form-group"><label class="form-label">${dep}</label><input class="form-input" type="number" min="0" id="rep_ipd_${dep.replace(/ /g,'_')}" value="0"></div>`).join('')}</div>
+      <div class="sec-title"><span class="sec-dot" style="background:var(--teal)"></span>OPD & Movements</div>
+      <div class="form-grid-3" style="margin-bottom:12px;">
+        <div class="form-group"><label class="form-label">OPD</label><input class="form-input" type="number" min="0" id="rep_opd" value="0"></div>
+        <div class="form-group"><label class="form-label">Admissions</label><input class="form-input" type="number" min="0" id="rep_admit" value="0"></div>
+        <div class="form-group"><label class="form-label">Discharges</label><input class="form-input" type="number" min="0" id="rep_discharge" value="0"></div>
+      </div>
+      <div class="sec-title"><span class="sec-dot" style="background:var(--coral)"></span>Services & Collection (₹)</div>
+      <div class="form-grid" style="margin-bottom:12px;">
+        ${IPD_DEPTS.map(dep=>`<div class="form-group"><label class="form-label">${dep} (₹)</label><input class="form-input" type="number" min="0" id="rep_mc_ipd_${dep.replace(/ /g,'_')}" value="0"></div>`).join('')}
+        <div class="form-group"><label class="form-label">OPD (₹)</label><input class="form-input" type="number" min="0" id="rep_mc_opd" value="0"></div>
+        ${SERVICES.map(s=>`<div class="form-group"><label class="form-label">${s} (₹)</label><input class="form-input" type="number" min="0" id="rep_mc_svc_${s.replace(/ /g,'_')}" value="0"></div>`).join('')}
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="submitReplacement()">Submit Replacement Record</button></div>
+    </div>
+    ${activeReplacements().length ? `
+      <div class="card">
+        <div class="card-hd"><div class="card-ht">Replacement Records</div><button class="btn btn-secondary btn-sm" onclick="exportReplacements()">⬇ Export</button></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>By</th><th>Replaced</th><th>Shift</th><th>Time</th><th>IPD</th><th>OPD</th><th>Collection</th>${S.isDemoMode?'<th></th>':''}</tr></thead>
+            <tbody>${activeReplacements().slice().sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`
+              <tr>
+                <td class="mono">${fmtDate(r.date)}</td>
+                <td>${r.replacementName}${r.isDemo?` <span class="badge" style="background:#fdf3e3;color:#7a5c00;font-size:9px;">demo</span>`:''}</td>
+                <td>${getRec(r.originalRecId)?.name||''}</td>
+                <td><span class="badge ${shiftClass(r.shift)}">${r.shift}</span></td>
+                <td class="mono">${r.startTime}–${r.endTime}</td>
+                <td class="mono">${Object.values(r.ipd).reduce((a,b)=>a+b,0)}</td>
+                <td class="mono">${r.opd}</td>
+                <td class="mono">${fmtMoney(r.totalMoney)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    ` : ''}
+  `;
+}
+
+function submitReplacement() {
+  const name=document.getElementById('rep_name')?.value?.trim();
+  const date=document.getElementById('rep_date')?.value;
+  if (!name||!date) { showToast('Please fill staff name and date','warning'); return; }
+  const ipd={}; IPD_DEPTS.forEach(dep=>{ const el=document.getElementById('rep_ipd_'+dep.replace(/ /g,'_')); ipd[dep]=el?parseInt(el.value)||0:0; });
+  const svc={}; SERVICES.forEach(s=>{ const el=document.getElementById('rep_svc_'+s.replace(/ /g,'_')); svc[s]=el?parseInt(el.value)||0:0; });
+  const money={}; let total=0;
+  IPD_DEPTS.forEach(dep=>{ const el=document.getElementById('rep_mc_ipd_'+dep.replace(/ /g,'_')); money['ipd_'+dep]=el?parseInt(el.value)||0:0; total+=money['ipd_'+dep]; });
+  SERVICES.forEach(s=>{ const el=document.getElementById('rep_mc_svc_'+s.replace(/ /g,'_')); money['svc_'+s]=el?parseInt(el.value)||0:0; total+=money['svc_'+s]; });
+  money['opd']=parseInt(document.getElementById('rep_mc_opd')?.value)||0; total+=money['opd'];
+  S.replacements.push({ id:'rep_'+Date.now(), replacementName:name, originalRecId:document.getElementById('rep_original')?.value, shift:document.getElementById('rep_shift')?.value, startTime:document.getElementById('rep_start')?.value, endTime:document.getElementById('rep_end')?.value, date, ipd, svc, opd:parseInt(document.getElementById('rep_opd')?.value)||0, admit:parseInt(document.getElementById('rep_admit')?.value)||0, discharge:parseInt(document.getElementById('rep_discharge')?.value)||0, money, totalMoney:total });
+  saveToStorage();
+  showToast('Replacement record submitted!','success');
+  renderReplacement();
+}
+
+// =====================================================================
+// MASTER DASHBOARD
+// =====================================================================
+function renderMaster() {
+  const center=document.getElementById('center'), right=document.getElementById('rightbar');
+  const allR=activeRecords();
+  const mo=new Date().toISOString().slice(0,7);
+  const moR=allR.filter(r=>r.date.startsWith(mo));
+  const totPts=allR.reduce((s,r)=>s+Object.values(r.ipd).reduce((a,b)=>a+b,0)+r.opd,0);
+  const totMoney=allR.reduce((s,r)=>s+r.totalMoney,0);
+  const moPts=moR.reduce((s,r)=>s+Object.values(r.ipd).reduce((a,b)=>a+b,0)+r.opd,0);
+  const moMoney=moR.reduce((s,r)=>s+r.totalMoney,0);
+  const ipdByDept={}; IPD_DEPTS.forEach(dep=>{ipdByDept[dep]=allR.reduce((s,r)=>s+(r.ipd[dep]||0),0);});
+  const svcCounts={}; SERVICES.forEach(s=>{svcCounts[s]=allR.reduce((s2,r)=>s2+(r.svc[s]||0),0);});
+  const moByDept={}; IPD_DEPTS.forEach(dep=>{moByDept[dep]=allR.reduce((s,r)=>s+(r.money['ipd_'+dep]||0),0);});
+  const maxIPD=Math.max(...Object.values(ipdByDept),1);
+  const maxMoD=Math.max(...Object.values(moByDept),1);
+  const maxSvc=Math.max(...Object.values(svcCounts),1);
+
+  // Task completion admin view
+  const today=todayStr();
+  const taskSummary=S.receptionists.map(r=>{
+    const done=computeAutoChecklist(r.id,today).length;
+    const pct=Math.round(done/DAILY_TASKS.length*100);
+    return {r,done,pct,incomplete:DAILY_TASKS.length-done};
+  });
+
+  center.innerHTML=`
+    <div class="filter-row" style="margin-bottom:4px;">
+      <select class="filter-select" id="master-filter" onchange="filterMaster(this.value)">
+        <option value="all">All Time</option>
+        <option value="today">Today</option>
+        <option value="week">This Week</option>
+        <option value="month" selected>This Month</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="exportMaster()">⬇ Export All Data</button>
+      ${S.isDemoMode?`<button class="btn btn-sm btn-amber" onclick="deactivateDemo()">Exit Demo</button>`:`<button class="btn btn-sm btn-amber" onclick="activateDemo()">Activate Demo Data</button>`}
+    </div>
+
+    <!-- TASK STATUS -->
+    <div class="card">
+      <div class="card-hd"><div class="card-ht">Today's Task Completion — All Receptionists</div></div>
+      ${taskSummary.map(item=>`
+        <div class="bar-row">
+          <div style="display:flex;align-items:center;gap:8px;min-width:150px;">
+            <div style="width:22px;height:22px;border-radius:6px;background:${item.r.color};display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:600;">${item.r.initial}</div>
+            <span class="bar-label" style="min-width:auto;">${item.r.name.split(' ')[0]}</span>
+            ${item.incomplete>0?`<span class="badge" style="background:var(--red-light);color:var(--red);font-size:10px;">⚠ ${item.incomplete} pending</span>`:`<span class="badge" style="background:var(--green-light);color:var(--green);font-size:10px;">✓ Done</span>`}
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:${item.pct}%;background:${item.incomplete===0?'var(--green)':'var(--blue)'};"></div></div>
+          <span class="bar-val">${item.done}/${DAILY_TASKS.length}</span>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="stat-grid stat-grid-3">
+      <div class="stat-card stat-blue"><div class="stat-label">Total Patients (All Time)</div><div class="stat-value" style="color:var(--blue)">${fmtNum(totPts)}</div><div class="stat-sub">IPD + OPD</div></div>
+      <div class="stat-card stat-green"><div class="stat-label">Total Collection (All Time)</div><div class="stat-value" style="color:var(--green);font-size:18px;">${fmtMoney(totMoney)}</div><div class="stat-sub">All departments</div></div>
+      <div class="stat-card stat-teal"><div class="stat-label">This Month</div><div class="stat-value" style="color:var(--teal)">${fmtNum(moPts)}</div><div class="stat-sub">${fmtMoney(moMoney)} collected</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="card">
+        <div class="card-ht" style="margin-bottom:12px;">IPD by Department</div>
+        ${IPD_DEPTS.map(dep=>`<div class="bar-row"><span class="bar-label">${dep}</span><div class="bar-track"><div class="bar-fill" style="width:${(ipdByDept[dep]/maxIPD*100).toFixed(0)}%;background:var(--blue);"></div></div><span class="bar-val">${fmtNum(ipdByDept[dep])}</span></div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-ht" style="margin-bottom:12px;">IPD Collection by Department</div>
+        ${IPD_DEPTS.map(dep=>`<div class="bar-row"><span class="bar-label">${dep}</span><div class="bar-track"><div class="bar-fill" style="width:${(moByDept[dep]/maxMoD*100).toFixed(0)}%;background:var(--green);"></div></div><span class="bar-val">${fmtMoney(moByDept[dep])}</span></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-ht" style="margin-bottom:12px;">Services Overview</div>
+      ${SERVICES.map(s=>`<div class="bar-row"><span class="bar-label">${s}</span><div class="bar-track"><div class="bar-fill" style="width:${(svcCounts[s]/maxSvc*100).toFixed(0)}%;background:var(--teal);"></div></div><span class="bar-val">${fmtNum(svcCounts[s])}</span></div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><div class="card-ht">Receptionist Comparison</div><button class="btn btn-secondary btn-sm" onclick="exportReceptionistComparison()">⬇ Export</button></div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Receptionist</th><th>Shift</th><th>Timings</th><th>Days</th><th>Patients</th><th>Collection</th><th>Avg/Day</th></tr></thead>
+        <tbody>${S.receptionists.map(r=>{
+          const rr=getRecords(r.id);
+          const pts=rr.reduce((s,rec)=>s+Object.values(rec.ipd).reduce((a,b)=>a+b,0)+rec.opd,0);
+          const m=rr.reduce((s,rec)=>s+rec.totalMoney,0);
+          return `<tr><td><div style="display:flex;align-items:center;gap:8px;"><div style="width:22px;height:22px;border-radius:6px;background:${r.color};display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:600;">${r.initial}</div>${r.name}</div></td><td><span class="badge ${shiftClass(r.shift)}">${r.shift}</span></td><td class="mono" style="font-size:11px;">${r.shiftStart}–${r.shiftEnd}</td><td class="mono">${rr.length}</td><td class="mono">${fmtNum(pts)}</td><td class="mono">${fmtMoney(m)}</td><td class="mono">${rr.length?fmtMoney(Math.round(m/rr.length)):'—'}</td></tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>
+  `;
+
+  right.innerHTML=`
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Quick Stats</div>
+    <div class="card" style="padding:11px;">
+      <div class="mini-stat"><span class="mini-stat-label">Total Records</span><span class="mini-stat-val">${allR.length}</span></div>
+      <div class="mini-stat"><span class="mini-stat-label">Total IPD</span><span class="mini-stat-val">${allR.reduce((s,r)=>s+Object.values(r.ipd).reduce((a,b)=>a+b,0),0)}</span></div>
+      <div class="mini-stat"><span class="mini-stat-label">Total OPD</span><span class="mini-stat-val">${allR.reduce((s,r)=>s+r.opd,0)}</span></div>
+      <div class="mini-stat"><span class="mini-stat-label">Total Admissions</span><span class="mini-stat-val">${allR.reduce((s,r)=>s+r.admit,0)}</span></div>
+      <div class="mini-stat"><span class="mini-stat-label">Total Discharges</span><span class="mini-stat-val">${allR.reduce((s,r)=>s+r.discharge,0)}</span></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;margin:12px 0 8px;">Data Mode</div>
+    <div class="card" style="padding:11px;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Current: <strong>${S.isDemoMode?'Demo Mode':'Real Data'}</strong></div>
+      ${S.isDemoMode?`<button class="btn btn-sm btn-secondary" onclick="deactivateDemo()" style="width:100%;justify-content:center;">Exit Demo Mode</button>`:
+      `<button class="btn btn-sm btn-amber" onclick="activateDemo()" style="width:100%;justify-content:center;">Activate Demo Data</button>`}
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;">Demo mode overlays sample data on top of your real records. Exiting restores your real data only.</div>
+    </div>
+  `;
+}
+
+function filterMaster(val) {
+  // Simplified filter — re-render with filter applied
+  renderMaster(); // full re-render handles state
+}
+
+// =====================================================================
+// ANALYTICS
+// =====================================================================
+function renderAnalytics() {
+  const center=document.getElementById('center'), right=document.getElementById('rightbar');
+  const allR=activeRecords();
+  const moneyByRec=S.receptionists.map(r=>({ r, total:getRecords(r.id).reduce((s,rec)=>s+rec.totalMoney,0), count:getRecords(r.id).length })).sort((a,b)=>b.total-a.total);
+  const maxMR=Math.max(...moneyByRec.map(r=>r.total),1);
+  const svcMoney=SERVICES.map(s=>({ s, v:allR.reduce((sum,r)=>sum+(r.money['svc_'+s]||0),0) })).sort((a,b)=>b.v-a.v);
+  const maxSM=Math.max(...svcMoney.map(r=>r.v),1);
+  const ipdPts=IPD_DEPTS.map(dep=>({ dep, v:allR.reduce((s,r)=>s+(r.ipd[dep]||0),0) })).sort((a,b)=>b.v-a.v);
+  const maxIPD=Math.max(...ipdPts.map(r=>r.v),1);
+  const now=new Date();
+  const months=Array.from({length:6},(_,i)=>{
+    const d=new Date(now.getFullYear(),now.getMonth()-5+i,1);
+    return { key:d.toISOString().slice(0,7), label:MONTHS[d.getMonth()] };
+  });
+  const monthlyMoney=months.map(m=>({ label:m.label, val:allR.filter(r=>r.date.startsWith(m.key)).reduce((s,r)=>s+r.totalMoney,0) }));
+  const maxM=Math.max(...monthlyMoney.map(m=>m.val),1);
+
+  // Color palette — soothing
+  const PALETTE=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316'];
+
+  center.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="card">
+        <div class="card-ht" style="margin-bottom:14px;">Receptionist Revenue Ranking</div>
+        ${moneyByRec.map((item,i)=>`
+          <div class="bar-row" style="margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:7px;min-width:130px;">
+              <div style="width:24px;height:24px;border-radius:7px;background:${item.r.color};display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:600;">${item.r.initial}</div>
+              <span style="font-size:12px;color:var(--text2);">${item.r.name.split(' ')[0]}</span>
+              ${i===0?`<span class="badge" style="background:#fef3c7;color:#92400e;font-size:10px;">#1</span>`:''}
+            </div>
+            <div class="bar-track" style="height:10px;"><div class="bar-fill" style="width:${(item.total/maxMR*100).toFixed(0)}%;background:${item.r.color};"></div></div>
+            <span class="bar-val">${fmtMoney(item.total)}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="card">
+        <div class="card-ht" style="margin-bottom:14px;">Monthly Collection Trend</div>
+        <div class="month-chart">
+          ${monthlyMoney.map((m,i)=>`
+            <div class="month-bar-wrap">
+              <span class="month-bar-val">${m.val>0?(m.val/1000).toFixed(0)+'k':''}</span>
+              <div class="month-bar" style="height:${(m.val/maxM*70+4).toFixed(0)}px;background:${PALETTE[i%PALETTE.length]};opacity:0.85;"></div>
+              <span class="month-bar-label">${m.label}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="card">
+        <div class="card-ht" style="margin-bottom:14px;">Best Performing Services (Revenue)</div>
+        ${svcMoney.slice(0,8).map((item,i)=>`
+          <div class="bar-row" style="margin-bottom:9px;">
+            <span class="bar-label">${item.s}</span>
+            <div class="bar-track" style="height:9px;"><div class="bar-fill" style="width:${(item.v/maxSM*100).toFixed(0)}%;background:${PALETTE[i%PALETTE.length]};opacity:0.8;"></div></div>
+            <span class="bar-val">${fmtMoney(item.v)}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="card">
+        <div class="card-ht" style="margin-bottom:14px;">IPD Ward Admissions</div>
+        ${ipdPts.map((item,i)=>`
+          <div class="bar-row" style="margin-bottom:11px;">
+            <span class="bar-label">${item.dep}</span>
+            <div class="bar-track" style="height:9px;"><div class="bar-fill" style="width:${(item.v/maxIPD*100).toFixed(0)}%;background:${PALETTE[i+2]};opacity:0.82;"></div></div>
+            <span class="bar-val">${fmtNum(item.v)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-ht" style="margin-bottom:14px;">Full Performance Matrix</div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Receptionist</th><th>Days</th><th>IPD</th><th>OPD</th><th>Admissions</th><th>Discharges</th><th>Revenue</th><th>Avg/Day</th><th>Rank</th></tr></thead>
+        <tbody>${moneyByRec.map((item,i)=>{
+          const rr=getRecords(item.r.id);
+          const ipd=rr.reduce((s,r)=>s+Object.values(r.ipd).reduce((a,b)=>a+b,0),0);
+          const opd=rr.reduce((s,r)=>s+r.opd,0);
+          const admit=rr.reduce((s,r)=>s+r.admit,0);
+          const disc=rr.reduce((s,r)=>s+r.discharge,0);
+          const medals=['🥇','🥈','🥉'];
+          return `<tr>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:22px;height:22px;border-radius:6px;background:${item.r.color};display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:600;">${item.r.initial}</div>${item.r.name}</div></td>
+            <td class="mono">${item.count}</td><td class="mono">${fmtNum(ipd)}</td><td class="mono">${fmtNum(opd)}</td><td class="mono">${fmtNum(admit)}</td><td class="mono">${fmtNum(disc)}</td>
+            <td class="mono">${fmtMoney(item.total)}</td><td class="mono">${item.count?fmtMoney(Math.round(item.total/item.count)):'—'}</td>
+            <td style="font-size:16px;">${medals[i]||''}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>
+  `;
+
+  right.innerHTML=`
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Key Insights</div>
+    <div class="insight-card green"><strong>Top Earner:</strong> ${moneyByRec[0]?.r.name}<br>${fmtMoney(moneyByRec[0]?.total||0)} total</div>
+    <div class="insight-card"><strong>Best Service:</strong> ${svcMoney[0]?.s}<br>${fmtMoney(svcMoney[0]?.v||0)} revenue</div>
+    <div class="insight-card amber"><strong>Busiest Ward:</strong> ${ipdPts[0]?.dep}<br>${fmtNum(ipdPts[0]?.v||0)} patients</div>
+    <div style="font-size:13px;font-weight:600;margin:12px 0 8px;">Exports</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <button class="btn btn-secondary btn-sm" onclick="exportMaster()" style="width:100%;justify-content:center;">⬇ All Records</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportReplacements()" style="width:100%;justify-content:center;">⬇ Replacements</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportReceptionistComparison()" style="width:100%;justify-content:center;">⬇ Comparison</button>
+    </div>
+    <div style="font-size:13px;font-weight:600;margin:14px 0 8px;">Demo Data</div>
+    <div class="card" style="padding:10px;">
+      ${S.isDemoMode?`<button class="btn btn-sm btn-secondary" onclick="deactivateDemo()" style="width:100%;justify-content:center;">Exit Demo Mode</button>`:
+      `<button class="btn btn-sm btn-amber" onclick="activateDemo()" style="width:100%;justify-content:center;">Activate Demo</button>`}
+    </div>
+  `;
+}
+
+// =====================================================================
+// SETTINGS TAB
+// =====================================================================
+function renderSettings() {
+  const center=document.getElementById('center'), right=document.getElementById('rightbar');
+  right.innerHTML=`
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Data Management</div>
+    <div class="card" style="padding:11px;">
+      <button class="btn btn-secondary btn-sm" onclick="downloadUpdatedHTML()" style="width:100%;justify-content:center;margin-bottom:7px;">⬇ Download Updated File</button>
+      <button class="btn btn-primary btn-sm" onclick="openGistSetupModal()" style="width:100%;justify-content:center;margin-bottom:7px;">☁ GitHub Sync Setup</button>
+      <button class="btn btn-sm btn-amber" onclick="${S.isDemoMode?'deactivateDemo()':'activateDemo()'}" style="width:100%;justify-content:center;margin-bottom:7px;">${S.isDemoMode?'Exit Demo Mode':'Activate Demo Data'}</button>
+      <button class="btn btn-secondary btn-sm" onclick="refreshData()" style="width:100%;justify-content:center;margin-bottom:7px;">↺ Refresh Data</button>
+      <div style="margin-top:8px;padding-top:10px;border-top:1px solid var(--border);">
+        <button class="btn btn-sm btn-danger" onclick="confirmClearData()" style="width:100%;justify-content:center;">Clear All Real Data</button>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;">Cannot be undone. Download backup first.</div>
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:600;margin:12px 0 8px;">Admin Session</div>
+    <div class="card" style="padding:11px;">
+      <div style="font-size:12px;color:var(--green);margin-bottom:8px;font-weight:500;">🔓 Admin unlocked</div>
+      <button class="btn btn-sm btn-secondary" onclick="lockAdmin()" style="width:100%;justify-content:center;">🔒 Lock Admin Session</button>
+    </div>
+  `;
+
+  center.innerHTML=`
+    <!-- RECEPTIONIST MANAGEMENT -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-ht">Receptionist Management</div>
+        <button class="btn btn-primary btn-sm" onclick="openAddReceptionistModal()">+ Add Receptionist</button>
+      </div>
+      <div id="rec-list-settings"></div>
+    </div>
+
+    <!-- SHIFT TIMINGS -->
+    <div class="card">
+      <div class="card-ht" style="margin-bottom:14px;">Shift Timings & Overlap Detection</div>
+      <div id="shift-timing-list"></div>
+      <div id="overlap-status"></div>
+    </div>
+
+    <!-- DAILY TASKS -->
+    <div class="card">
+      <div class="card-ht" style="margin-bottom:10px;">Daily Task List</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">These 8 tasks must be completed every shift. Tasks auto-check when data is saved.</div>
+      ${DAILY_TASKS.map((t,i)=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:var(--surface);">
+          <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);min-width:20px;">${String(i+1).padStart(2,'0')}</span>
+          <span style="font-size:13px;color:var(--text);flex:1;">${t.text}</span>
+          <span style="background:${t.catColor}18;color:${t.catColor};font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;">${t.cat}</span>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- FILE & DATA -->
+    <div class="card">
+      <div class="card-ht" style="margin-bottom:12px;">File & Data Management</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="downloadUpdatedHTML()">⬇ Download Updated HTML File</button>
+        <button class="btn btn-amber" onclick="${S.isDemoMode?'deactivateDemo()':'activateDemo()'}">${S.isDemoMode?'Exit Demo':'Activate Demo'}</button>
+        <button class="btn btn-secondary" onclick="refreshData()">↺ Refresh Data</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.7;">
+        <strong>Download Updated HTML File</strong> saves a new copy of this file with all your data embedded. Open it on any computer — no internet needed. Data is also auto-saved in this browser every time you submit a record.
+      </div>
+    </div>
+  `;
+
+  renderRecListSettings();
+  renderShiftTimingList();
+  setTimeout(checkOverlaps, 100);
+}
+
+function renderRecListSettings() {
+  const el = document.getElementById('rec-list-settings');
+  if (!el) return;
+  el.innerHTML = S.receptionists.map(r => `
+    <div class="shift-time-card" id="recset_${r.id}">
+      <div class="shift-time-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:${r.color};display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:600;">${r.initial}</div>
+          <div>
+            <div style="font-weight:600;font-size:13px;">${r.name}</div>
+            <div style="font-size:11px;color:var(--text3);">${r.phone} · ${r.email}</div>
+            <div style="margin-top:3px;display:flex;gap:5px;flex-wrap:wrap;">
+              <span class="badge ${shiftClass(r.shift)}">${r.shift}</span>
+              <span class="badge" style="background:var(--teal-light);color:var(--teal);font-size:10px;">${r.shiftStart}–${r.shiftEnd}</span>
+              ${r.personalFile ? `<span class="badge" style="background:var(--purple-light);color:var(--purple);font-size:10px;">📎 File attached</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-secondary btn-sm" onclick="openEditProfile('${r.id}')">Edit</button>
+          <button class="btn btn-secondary btn-sm" onclick="openUploadFileModal('${r.id}')">📎 Files</button>
+          <button class="btn btn-sm btn-danger" onclick="confirmDeleteReceptionist('${r.id}')">Delete</button>
+        </div>
+      </div>
+      ${r.notes ? `<div style="font-size:12px;color:var(--text3);margin-top:6px;padding:6px 8px;background:var(--surface2);border-radius:var(--radius-sm);">📝 ${r.notes}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderShiftTimingList() {
+  const el = document.getElementById('shift-timing-list');
+  if (!el) return;
+  el.innerHTML = S.receptionists.map(r => `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${r.color};"></div>${r.name}
+      </div>
+      <div class="form-grid-4">
+        <div class="form-group"><label class="form-label">Shift Type</label>
+          <select class="form-input" id="st_shift_${r.id}" onchange="updateShiftSetting('${r.id}')">
+            ${['morning','evening','night'].map(s=>`<option value="${s}" ${r.shift===s?'selected':''}>${s[0].toUpperCase()+s.slice(1)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Start Time</label>
+          <input class="form-input" type="time" id="st_start_${r.id}" value="${r.shiftStart}" onchange="updateShiftSetting('${r.id}')">
+        </div>
+        <div class="form-group"><label class="form-label">End Time</label>
+          <input class="form-input" type="time" id="st_end_${r.id}" value="${r.shiftEnd}" onchange="updateShiftSetting('${r.id}')">
+        </div>
+        <div class="form-group" style="justify-content:flex-end;padding-top:20px;">
+          <button class="btn btn-secondary btn-sm" onclick="saveShiftSettings('${r.id}')">Save</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateShiftSetting(recId) { checkOverlaps(); }
+
+function saveShiftSettings(recId) {
+  const rec=getRec(recId);
+  rec.shift=document.getElementById('st_shift_'+recId)?.value||rec.shift;
+  rec.shiftStart=document.getElementById('st_start_'+recId)?.value||rec.shiftStart;
+  rec.shiftEnd=document.getElementById('st_end_'+recId)?.value||rec.shiftEnd;
+  saveToStorage();
+  showToast('Shift settings saved for '+rec.name,'success');
+  updateShiftBadge();
+  checkOverlaps();
+}
+
+function checkOverlaps() {
+  const el=document.getElementById('overlap-status'); if(!el) return;
+  const recs=S.receptionists.map(r=>({
+    name:r.name.split(' ')[0],
+    start:document.getElementById('st_start_'+r.id)?.value||r.shiftStart,
+    end:document.getElementById('st_end_'+r.id)?.value||r.shiftEnd,
+  }));
+  const overlaps=[];
+  for (let i=0;i<recs.length;i++) for (let j=i+1;j<recs.length;j++) {
+    const a=recs[i], b=recs[j];
+    const aS=timeToMin(a.start), aE=timeToMin(a.end)+(timeToMin(a.end)<=timeToMin(a.start)?1440:0);
+    const bS=timeToMin(b.start), bE=timeToMin(b.end)+(timeToMin(b.end)<=timeToMin(b.start)?1440:0);
+    if (aS<bE && bS<aE) overlaps.push(`${a.name} (${a.start}–${a.end}) overlaps with ${b.name} (${b.start}–${b.end})`);
+  }
+  el.innerHTML = overlaps.length ? overlaps.map(o=>`<div class="overlap-warning">⚠ ${o}</div>`).join('') : `<div class="complete-success" style="margin-top:8px;">✓ No shift overlaps detected.</div>`;
+}
+function timeToMin(t) { if(!t) return 0; const [h,m]=t.split(':').map(Number); return h*60+m; }
+
+async function refreshData() {
+  const loaded = await loadFromStorage();
+  showToast(loaded?'Data refreshed from GitHub':'No data found');
+  reRender();
+}
+
+function confirmClearData() {
+  openModal('Clear Data','<div style="font-size:13px;line-height:1.75;"><div style="color:var(--red);margin-bottom:12px;"><strong>⚠ Warning — this cannot be undone.</strong> Download a backup first.</div><div style="margin-bottom:10px;"><strong>Clear Records Only</strong> — deletes all records, checklists and replacements, but keeps your receptionists.</div><div><strong>Full Reset</strong> — removes everything including all receptionists.</div></div>',
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-amber" onclick="clearAllData(false)">Clear Records Only</button>
+     <button class="btn btn-danger" onclick="clearAllData(true)">Full Reset</button>`);
+}
+
+async function clearAllData(fullReset) {
+  S.records=[]; S.replacements=[]; S.checklists={};
+  if (fullReset) { S.receptionists=[]; S.currentRec=null; }
+  window.__MD__ = null;
+  closeModal();
+  if (GIST_CONFIG.gistId && getGhToken()) {
+    const ok = await gistDelete(GIST_CONFIG.gistId, getGhToken());
+    showToast(ok ? (fullReset ? 'Full reset — data wiped from GitHub ✓' : 'Records cleared from GitHub ✓') : 'Local cleared but Gist wipe failed — check token', ok ? 'success' : 'warning');
+  } else {
+    showToast(fullReset ? 'Full reset done' : 'Records cleared');
+    saveToStorage();
+  }
+  reRender();
+}
+
+// =====================================================================
+// HELP TAB
+// =====================================================================
+function renderHelp() {
+  const center=document.getElementById('center'), right=document.getElementById('rightbar');
+  let helpRole='receptionist';
+  right.innerHTML=`
+    <div class="support-card">
+      <div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:4px;">Need Help?</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">Call our support team</div>
+      <div class="support-number">9456605829</div>
+      <div style="font-size:11px;color:var(--text3);">Available 9 AM – 6 PM</div>
+    </div>
+    <div style="font-size:13px;font-weight:600;margin:14px 0 8px;">Quick Links</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <button class="btn btn-secondary btn-sm" onclick="switchTab('reception')" style="width:100%;justify-content:left;">→ Go to Reception</button>
+      <button class="btn btn-secondary btn-sm" onclick="switchTab('settings')" style="width:100%;justify-content:left;">→ Shift Settings</button>
+      <button class="btn btn-secondary btn-sm" onclick="switchTab('master')" style="width:100%;justify-content:left;">→ Master Dashboard</button>
+      <button class="btn btn-secondary btn-sm" onclick="switchTab('analytics')" style="width:100%;justify-content:left;">→ Analytics</button>
+    </div>
+  `;
+
+  center.innerHTML=`
+    <div class="task-role-tab">
+      <button class="task-role-btn active" id="help-role-rec" onclick="setHelpRole('receptionist')">For Receptionists</button>
+      <button class="task-role-btn" id="help-role-admin" onclick="setHelpRole('admin')">For Admin / Management</button>
+    </div>
+    <div id="help-content"></div>
+  `;
+  renderHelpContent('receptionist');
+}
+
+function setHelpRole(role) {
+  if (role === 'admin' && !adminUnlocked) {
+    showAdminLoginModal('help');
+    return;
+  }
+  document.getElementById('help-role-rec')?.classList.toggle('active', role==='receptionist');
+  document.getElementById('help-role-admin')?.classList.toggle('active', role==='admin');
+  renderHelpContent(role);
+}
+
+function renderHelpContent(role) {
+  const el=document.getElementById('help-content'); if(!el) return;
+  if (role==='receptionist') {
+    el.innerHTML=`
+      <div class="card" style="border-left:4px solid var(--blue);">
+        <div class="help-section-title">☑ How the Daily Checklist Works — Important</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:10px;">
+          The Daily Checklist shows <strong>8 tasks</strong> that must be completed every shift. Unlike a regular checklist, <strong>you cannot manually tick any task yourself.</strong>
+        </div>
+        <div style="background:var(--amber-light);border:1px solid #e8c060;border-radius:var(--radius-sm);padding:10px 13px;font-size:13px;color:#7a5c00;margin-bottom:12px;">
+          <strong>Tasks are checked automatically</strong> only when you actually save the corresponding data in the system. If you do not save the data, the task will remain unchecked even if you have seen the screen.
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px;font-weight:600;">Each task and what triggers it:</div>
+        ${DAILY_TASKS.map((t,i)=>`
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:var(--surface);">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${i+1}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:500;color:var(--text);">${t.text}</div>
+              <div style="font-size:11px;color:var(--blue);margin-top:3px;">✦ How to complete: ${t.hint}</div>
+            </div>
+            <span style="background:${t.catColor}22;color:${t.catColor};font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;white-space:nowrap;">${t.cat}</span>
+          </div>
+        `).join('')}
+        <div style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.65;">
+          <strong>Important:</strong> If any field has no activity for the day, you must still enter <strong>0</strong> (zero) and save. The system does not accept a blank — entering 0 tells the system that you have checked and confirmed there were no patients or no money for that item. Only then will the task be marked as done.
+        </div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">🚀 Step-by-Step Daily Workflow</div>
+        <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text"><strong>Select your name</strong> in the left sidebar under "Receptionists". Your profile and today's overview will open.</div></div>
+        <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text"><strong>Check the date bar</strong> at the top of every section. It should show today's date. Use the ◀ Prev / Next ▶ buttons if you need to update a past date.</div></div>
+        <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text"><strong>Go to "IPD Patients".</strong> Enter the patient count for each ward — ICU, Private Ward, Semi Private, General Ward. <em>Even if a ward has 0 patients, enter 0.</em> Click <strong>Save IPD Data</strong>. Task 1 will be marked done automatically.</div></div>
+        <div class="help-step"><div class="help-step-num">4</div><div class="help-step-text"><strong>Go to "OPD & Movements".</strong> Enter OPD count, Admissions, and Discharges. Enter 0 if there were none. Click <strong>Save OPD Data</strong>. Tasks 2 and 3 will be marked done automatically.</div></div>
+        <div class="help-step"><div class="help-step-num">5</div><div class="help-step-text"><strong>Go to "Other Services".</strong> Enter the count for every service. Enter 0 for any service not used today. Click <strong>Save Services</strong>. Task 4 will be marked done automatically.</div></div>
+        <div class="help-step"><div class="help-step-num">6</div><div class="help-step-text"><strong>Go to "Money Collection".</strong> Enter the money collected from each IPD ward, OPD, and every service. Enter 0 where no money was collected. The total is calculated automatically.</div></div>
+        <div class="help-step"><div class="help-step-num">7</div><div class="help-step-text"><strong>Click "Submit Day's Record"</strong> at the bottom of Money Collection. This is the final step. Tasks 5, 6, 7, and 8 will all be marked done at once.</div></div>
+        <div class="help-step"><div class="help-step-num">8</div><div class="help-step-text"><strong>Check "Daily Checklist"</strong> to confirm all 8 tasks show as complete (green circles). If any remain unchecked, go back to that section and make sure you saved the data.</div></div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">🔄 If You Are on Replacement Duty</div>
+        <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text">Click on the <strong>"Replacement Duty"</strong> tab at the top of the screen.</div></div>
+        <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text">Fill in your full name, the date, the name of the receptionist you are replacing, your shift timings, and all patient and money data for your shift.</div></div>
+        <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text">Click <strong>"Submit Replacement Record"</strong>. The original receptionist's profile will automatically show that they were replaced, by whom, and when.</div></div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">📅 Updating Data for a Past Date</div>
+        <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text">In any data entry section (IPD, OPD, Services, Money, Checklist), look for the <strong>date navigation bar</strong> at the very top.</div></div>
+        <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text">Click the date field to pick any past date, or use <strong>◀ Prev</strong> to go back one day at a time.</div></div>
+        <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text">Fill in the data and save as usual. All changes are stored for that specific date and will not affect any other date's records.</div></div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">❓ Frequently Asked Questions</div>
+        ${[
+          ['Why is my task still showing as incomplete even after I filled the form?','You must click the Save button after filling the form. Simply viewing or typing in the form does not save data. Look for the green save button and click it — then the task will be automatically marked done.'],
+          ['Can I enter 0 for a ward or service?','Yes, absolutely. If there were no patients in a ward today, enter 0 and save. The system needs a confirmed entry — 0 means you have checked and confirmed. Leaving it blank is not accepted as a completed task.'],
+          ['What if I forgot to enter data for yesterday?','Use the date navigation bar at the top of each section. Select yesterday\'s date, fill in the data, and save. The checklist for that date will also update automatically.'],
+          ['What if I made a mistake in the numbers?','Go back to the same section, make sure the date is correct, change the number, and save again. The old value will be replaced with the new one.'],
+          ['Do I need internet to use this?','No. Once the HTML file is open in a browser, it works fully offline. Data is saved inside the browser on this computer.'],
+          ['What if the browser is closed accidentally?','Your data is saved every time you press Save or Submit. Reopen the same file in the same browser and all your data will be there.'],
+        ].map(([q,a])=>`<div class="faq-item"><div class="faq-q" onclick="toggleFAQ(this)">${q}<span>+</span></div><div class="faq-a hidden">${a}</div></div>`).join('')}
+      </div>
+    `;
+  } else {
+    el.innerHTML=`
+      <div class="card" style="border-left:4px solid var(--purple);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="font-size:22px;">🔐</div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);">Admin Section — Password Protected</div>
+            <div style="font-size:12px;color:var(--text3);">Master Dashboard, Analytics, Settings, and this guide require admin login.</div>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+          To <strong>change the password</strong>, click "Forgot password?" on the login screen and answer the security question: <em>"What is your group name?"</em>. On answering correctly, you can set a new password.<br><br>
+          To <strong>lock the admin session</strong> when leaving the computer, click the red <strong>🔒 Lock Admin</strong> button in the top right. This will require the password again to access admin sections.
+        </div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">🏥 Admin Overview</div>
+        <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text"><strong>Master Dashboard</strong> — Complete overview of all patients, all money collected, department-wise breakdowns, and live task completion status of all receptionists for today.</div></div>
+        <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text"><strong>Analytics</strong> — Performance rankings by receptionist, monthly revenue trend, best-performing services, and busiest wards. All exportable to Excel.</div></div>
+        <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text"><strong>Settings</strong> — Manage receptionist profiles, define exact shift start and end times, detect shift overlaps, download updated file, and manage data.</div></div>
+        <div class="help-step"><div class="help-step-num">4</div><div class="help-step-text"><strong>Replacement Duty</strong> — View all replacement shift records including who covered, who was replaced, when, and what data was entered during the replacement shift.</div></div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">☑ Understanding the Auto-Checklist System</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.75;">
+          Each receptionist has 8 daily tasks. These tasks <strong>cannot be manually ticked</strong> — they are checked automatically only when the receptionist actually saves data in the system:
+        </div>
+        <div style="margin-top:10px;">
+          ${[
+            ['Task 1','IPD data saved (all 4 wards filled and saved)'],
+            ['Tasks 2 & 3','OPD & Movements saved'],
+            ['Task 4','Other Services saved'],
+            ['Tasks 5, 6 & 7','Money Collection saved'],
+            ['Task 8','Day record submitted (final submit button clicked)'],
+          ].map(([t,d])=>`<div style="display:flex;gap:12px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="font-weight:600;color:var(--blue);min-width:80px;">${t}</span><span style="color:var(--text2);">${d}</span></div>`).join('')}
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.65;">Receptionists must enter <strong>0</strong> for any field with no activity — blank is not accepted as a completed entry. This ensures all data is consciously verified every day.</div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">👥 Managing Receptionists & Shift Timings</div>
+        <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text">Go to <strong>Settings → Receptionist Profiles & Shift Timings</strong> to view all receptionists with their current shift type and timings.</div></div>
+        <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text">Edit the <strong>Start Time</strong> and <strong>End Time</strong> for any receptionist and click Save. Shifts can overlap — the system will display a clear warning if they do.</div></div>
+        <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text">Click <strong>Edit</strong> next to any receptionist to update their name, phone, email, or shift type (morning / evening / night).</div></div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">📊 Monitoring Task Completion (Admin View)</div>
+        <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text">In <strong>Master Dashboard</strong>, the "Today's Task Completion" section shows a progress bar for each receptionist — how many of the 8 tasks are done today.</div></div>
+        <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text">A <strong>red dot</strong> on the Reception tab (top navigation) indicates that at least one receptionist has incomplete tasks today.</div></div>
+        <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text">In the Reception tab's left sidebar, each receptionist's card shows a <strong>red "Tasks ⚠" badge</strong> if their checklist is not fully complete today.</div></div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">💾 Data Backup & File Management</div>
+        <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text">Data is <strong>auto-saved</strong> in this browser every time a Save or Submit button is clicked, and also every 2 minutes as a safety backup.</div></div>
+        <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text">Click <strong>⬇ Save File</strong> (top right) or the "Download Updated HTML File" button in Settings to create a portable copy of this app with all data embedded. This file works on any computer in any browser — no internet needed.</div></div>
+        <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text"><strong>Demo Mode</strong> loads sample data so you can explore all charts and reports without touching real records. Exit Demo Mode to return to real data at any time.</div></div>
+        <div class="help-step"><div class="help-step-num">4</div><div class="help-step-text"><strong>Clear All Data</strong> in Settings is password-protected and requires confirmation. Always download a backup before using this option.</div></div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">📥 Exporting Reports</div>
+        <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text">In <strong>Master Dashboard</strong>, click <strong>⬇ Export All Data</strong> for a complete Excel file of all records by all receptionists.</div></div>
+        <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text">In <strong>Analytics</strong>, use the right panel export buttons to download Receptionist Comparison or Replacement records as separate Excel files.</div></div>
+        <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text">In the Reception tab, go to any receptionist's <strong>My Records</strong> section and click Export Excel to download that individual's full history.</div></div>
+      </div>
+      <div class="card">
+        <div class="help-section-title">❓ Frequently Asked Questions</div>
+        ${[
+          ['How do I change the admin password?','On the admin login screen, click "Forgot password? Change password". You will be asked: What is your group name? Answer correctly, then set a new password.'],
+          ['What if a receptionist did not fill data for a day?','Their record for that date will not exist in the system. In the Master Dashboard and Analytics, that date simply will not appear in their history. You can ask them to go back and fill it using the date navigation.'],
+          ['How do I know if the checklist is being taken seriously?','The Master Dashboard shows live task completion for all receptionists every day. Any receptionist with incomplete tasks will show a red warning. The checklist cannot be "faked" — it only marks done when actual data is saved.'],
+          ['How do I move data to a new computer?','Click "Download Updated HTML File" in Settings or the ⬇ Save File button. Copy the downloaded file to the new computer. Open it in any browser — all historical data is embedded inside the file itself.'],
+          ['Is data secure?','Data is stored locally in the browser of this specific computer and inside downloaded HTML files. It is never uploaded to any external server. Keep the computer login secure and use the admin lock feature when leaving the desk.'],
+          ['How do I add a new receptionist?','The system currently supports the three configured receptionists. Contact the developer to add more, as it requires editing the HTML file.'],
+        ].map(([q,a])=>`<div class="faq-item"><div class="faq-q" onclick="toggleFAQ(this)">${q}<span>+</span></div><div class="faq-a hidden">${a}</div></div>`).join('')}
+      </div>
+    `;
+  }
+}
+
+function toggleFAQ(el) {
+  const answer=el.nextElementSibling;
+  answer.classList.toggle('hidden');
+  el.querySelector('span').textContent=answer.classList.contains('hidden')?'+':'−';
+}
+
+// =====================================================================
+// RECEPTIONIST MANAGEMENT (Add / Edit / Delete / Upload)
+// =====================================================================
+const REC_COLORS = ['#3b6ef0','#0e9f8e','#6d3fd4','#d95c20','#1a9e52','#c98a10','#d63b3b','#0891b2'];
+
+function openAddReceptionistModal() {
+  const colorSwatches = REC_COLORS.map(function(c) {
+    return '<div onclick="selectRecColor(\'' + c + '\')" id="colopt_' + c.replace('#','') + '" style="width:26px;height:26px;border-radius:8px;background:' + c + ';cursor:pointer;border:2px solid transparent;transition:all .15s;"></div>';
+  }).join('');
+
+  openModal('Add New Receptionist', `
+    <div class="form-grid" style="margin-bottom:10px;">
+      <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="ep_name" placeholder="e.g. Rahul Kumar"></div>
+      <div class="form-group"><label class="form-label">Phone *</label><input class="form-input" id="ep_phone" placeholder="10-digit number"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="ep_email" placeholder="email@hospital.com"></div>
+      <div class="form-group"><label class="form-label">Employee ID</label><input class="form-input" id="ep_empid" placeholder="Optional"></div>
+      <div class="form-group"><label class="form-label">Date Joined</label><input class="form-input" type="date" id="ep_joined" value="${todayStr()}"></div>
+      <div class="form-group"><label class="form-label">Shift</label>
+        <select class="form-input" id="ep_shift">
+          <option value="morning">Morning</option>
+          <option value="evening">Evening</option>
+          <option value="night">Night</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Shift Start</label><input class="form-input" type="time" id="ep_shiftStart" value="08:00"></div>
+      <div class="form-group"><label class="form-label">Shift End</label><input class="form-input" type="time" id="ep_shiftEnd" value="14:00"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label class="form-label">Avatar Colour</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;" id="color-swatch-row">${colorSwatches}</div>
+      <input type="hidden" id="ep_color" value="${REC_COLORS[3]}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes / Additional Info</label>
+      <textarea class="form-input" id="ep_notes" rows="2" placeholder="Any additional information..."></textarea>
+    </div>
+  `,`
+    <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveNewReceptionist()">Add Receptionist</button>
+  `);
+  setTimeout(function() { selectRecColor(REC_COLORS[3]); }, 50);
+}
+
+function selectRecColor(c) {
+  document.querySelectorAll('[id^="colopt_"]').forEach(el=>el.style.border='2px solid transparent');
+  const el=document.getElementById('colopt_'+c.replace('#',''));
+  if(el) el.style.border='2px solid var(--text)';
+  const inp=document.getElementById('ep_color'); if(inp) inp.value=c;
+}
+
+function saveNewReceptionist() {
+  const name=document.getElementById('ep_name')?.value?.trim();
+  const phone=document.getElementById('ep_phone')?.value?.trim();
+  if (!name || !phone) { showToast('Name and phone are required','warning'); return; }
+  const color=document.getElementById('ep_color')?.value||REC_COLORS[0];
+  const words=name.trim().split(' ');
+  const initial=(words[0]?.[0]||'')+(words[1]?.[0]||words[0]?.[1]||'');
+  const id='r'+Date.now();
+  S.receptionists.push({
+    id, name, phone,
+    email:document.getElementById('ep_email')?.value||'',
+    empId:document.getElementById('ep_empid')?.value||'',
+    joined:document.getElementById('ep_joined')?.value||todayStr(),
+    shift:document.getElementById('ep_shift')?.value||'morning',
+    shiftStart:document.getElementById('ep_shiftStart')?.value||'08:00',
+    shiftEnd:document.getElementById('ep_shiftEnd')?.value||'14:00',
+    initial:initial.toUpperCase(), color,
+    notes:document.getElementById('ep_notes')?.value||'',
+    personalFile:null,
+  });
+  saveToStorage();
+  closeModal();
+  showToast(name+' added successfully','success');
+  S.currentRec = id;
+  if (S.mainTab === 'settings') renderSettings();
+  renderSidebar();
+  if (S.mainTab === 'reception') renderReceptionCenter();
+}
+
+function openEditProfile(recId) {
+  const r = getRec(recId);
+  if (!r) return;
+
+  const shiftOptions = ['morning','evening','night'].map(function(s) {
+    return '<option value="' + s + '"' + (r.shift===s?' selected':'') + '>' + s[0].toUpperCase()+s.slice(1) + '</option>';
+  }).join('');
+
+  const colorSwatches = REC_COLORS.map(function(c) {
+    const selected = c === r.color ? 'var(--text)' : 'transparent';
+    return '<div onclick="selectRecColor(\'' + c + '\')" id="colopt_' + c.replace('#','') + '" style="width:26px;height:26px;border-radius:8px;background:' + c + ';cursor:pointer;border:2px solid ' + selected + ';transition:all .15s;"></div>';
+  }).join('');
+
+  openModal('Edit Profile — ' + r.name, `
+    <div class="form-grid" style="margin-bottom:10px;">
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="ep_name" value="${r.name}"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="ep_phone" value="${r.phone}"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="ep_email" value="${r.email||''}"></div>
+      <div class="form-group"><label class="form-label">Employee ID</label><input class="form-input" id="ep_empid" value="${r.empId||''}"></div>
+      <div class="form-group"><label class="form-label">Date Joined</label><input class="form-input" type="date" id="ep_joined" value="${r.joined}"></div>
+      <div class="form-group"><label class="form-label">Shift</label>
+        <select class="form-input" id="ep_shift">${shiftOptions}</select>
+      </div>
+      <div class="form-group"><label class="form-label">Shift Start</label><input class="form-input" type="time" id="ep_shiftStart" value="${r.shiftStart}"></div>
+      <div class="form-group"><label class="form-label">Shift End</label><input class="form-input" type="time" id="ep_shiftEnd" value="${r.shiftEnd}"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label class="form-label">Avatar Colour</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">${colorSwatches}</div>
+      <input type="hidden" id="ep_color" value="${r.color}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes / Additional Info</label>
+      <textarea class="form-input" id="ep_notes" rows="2">${r.notes||''}</textarea>
+    </div>
+  `,`
+    <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveProfile('${recId}')">Save Changes</button>
+  `);
+}
+
+function saveProfile(recId) {
+  const r=getRec(recId);
+  if (!r) return;
+  r.name=document.getElementById('ep_name')?.value||r.name;
+  r.phone=document.getElementById('ep_phone')?.value||r.phone;
+  r.email=document.getElementById('ep_email')?.value||r.email;
+  r.empId=document.getElementById('ep_empid')?.value||r.empId||'';
+  r.joined=document.getElementById('ep_joined')?.value||r.joined;
+  r.shift=document.getElementById('ep_shift')?.value||r.shift;
+  r.shiftStart=document.getElementById('ep_shiftStart')?.value||r.shiftStart;
+  r.shiftEnd=document.getElementById('ep_shiftEnd')?.value||r.shiftEnd;
+  r.color=document.getElementById('ep_color')?.value||r.color;
+  r.notes=document.getElementById('ep_notes')?.value||'';
+  const words=r.name.trim().split(' ');
+  r.initial=((words[0]?.[0]||'')+(words[1]?.[0]||words[0]?.[1]||'')).toUpperCase();
+  saveToStorage(); closeModal();
+  showToast('Profile updated','success');
+  if (S.mainTab==='settings') renderSettings();
+  else reRender();
+  renderSidebar();
+  updateShiftBadge();
+}
+
+function confirmDeleteReceptionist(recId) {
+  const r=getRec(recId);
+  const recCount=S.records.filter(rec=>rec.recId===recId).length;
+  openModal('Delete Receptionist',`
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:36px;margin-bottom:8px;">⚠️</div>
+      <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:6px;">Delete ${r?.name}?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.65;">
+        This will permanently delete this receptionist's profile.<br>
+        <strong>${recCount} records</strong> associated with this receptionist will also be deleted.<br><br>
+        This action <strong>cannot be undone</strong>. Download a backup first.
+      </div>
+    </div>
+  `,`
+    <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-danger" onclick="deleteReceptionist('${recId}')">Yes, Delete</button>
+  `);
+}
+
+function deleteReceptionist(recId) {
+  if (S.receptionists.length <= 1) { showToast('Cannot delete — at least one receptionist required','warning'); closeModal(); return; }
+  const r=getRec(recId);
+  S.receptionists = S.receptionists.filter(rec=>rec.id!==recId);
+  S.records = S.records.filter(rec=>rec.recId!==recId);
+  if (S.currentRec===recId) S.currentRec=S.receptionists[0].id;
+  saveToStorage(); closeModal();
+  showToast(r?.name+' deleted','warning');
+  renderSettings();
+  renderSidebar();
+}
+
+function openUploadFileModal(recId) {
+  const r=getRec(recId);
+  openModal('Personal Files — '+r.name,`
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.65;">
+      Upload personal documents for ${r.name} (ID proof, certificates, contracts, etc.).<br>
+      <span style="font-size:12px;color:var(--text3);">Files are stored as base64 inside the app. Max size ~2MB per file.</span>
+    </div>
+    ${r.personalFiles && r.personalFiles.length ? `
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;">Uploaded Files:</div>
+        ${r.personalFiles.map((f,i)=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:var(--surface2);">
+            <span style="font-size:18px;">${f.type.includes('pdf')?'📄':f.type.includes('image')?'🖼️':'📎'}</span>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:500;">${f.name}</div>
+              <div style="font-size:11px;color:var(--text3);">${(f.size/1024).toFixed(1)} KB · Uploaded ${fmtDate(f.date)}</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="downloadFile('${recId}',${i})">⬇</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteFile('${recId}',${i})">✕</button>
+          </div>
+        `).join('')}
+      </div>
+    ` : `<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px;border:1px dashed var(--border2);border-radius:var(--radius);margin-bottom:14px;">No files uploaded yet.</div>`}
+    <div class="form-group">
+      <label class="form-label">Upload New File</label>
+      <input type="file" id="file-upload-input" class="form-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt" style="padding:6px;" onchange="previewUploadFile()">
+      <div id="upload-preview" style="font-size:12px;color:var(--text3);margin-top:4px;"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">File Label / Description</label>
+      <input class="form-input" id="file-label" placeholder="e.g. Aadhaar Card, Appointment Letter">
+    </div>
+  `,`
+    <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+    <button class="btn btn-primary" onclick="uploadFile('${recId}')">Upload File</button>
+  `);
+}
+
+function previewUploadFile() {
+  const inp=document.getElementById('file-upload-input');
+  const prev=document.getElementById('upload-preview');
+  if (!prev||!inp?.files[0]) return;
+  const f=inp.files[0];
+  prev.textContent=`Selected: ${f.name} (${(f.size/1024).toFixed(1)} KB)`;
+  prev.style.color=f.size>2*1024*1024?'var(--red)':'var(--green)';
+}
+
+function uploadFile(recId) {
+  const inp=document.getElementById('file-upload-input');
+  const label=document.getElementById('file-label')?.value||'Document';
+  if (!inp?.files[0]) { showToast('Please select a file','warning'); return; }
+  const file=inp.files[0];
+  if (file.size > 2*1024*1024) { showToast('File too large (max 2MB)','warning'); return; }
+  const reader=new FileReader();
+  reader.onload=function(e) {
+    const r=getRec(recId);
+    if (!r.personalFiles) r.personalFiles=[];
+    r.personalFiles.push({ name:label||file.name, originalName:file.name, type:file.type, size:file.size, data:e.target.result, date:todayStr() });
+    saveToStorage();
+    showToast('File uploaded: '+label,'success');
+    openUploadFileModal(recId); // refresh modal
+    if (S.mainTab==='settings') renderRecListSettings();
+  };
+  reader.readAsDataURL(file);
+}
+
+function downloadFile(recId, idx) {
+  const r=getRec(recId);
+  const f=r?.personalFiles?.[idx];
+  if (!f) return;
+  const a=document.createElement('a');
+  a.href=f.data; a.download=f.originalName||f.name;
+  a.click();
+}
+
+function deleteFile(recId, idx) {
+  const r=getRec(recId);
+  if (!r?.personalFiles) return;
+  r.personalFiles.splice(idx,1);
+  saveToStorage();
+  showToast('File deleted');
+  openUploadFileModal(recId);
+  if (S.mainTab==='settings') renderRecListSettings();
+}
+
+// =====================================================================
+// EXCEL EXPORTS
+// =====================================================================
+function exportRecords(recId) {
+  const r=getRec(recId), recs=getRecords(recId);
+  const rows=[['Date','Shift','ICU','Private Ward','Semi Private','General Ward','Total IPD','OPD','Admit','Discharge',...SERVICES,'Total Money']];
+  recs.forEach(rec=>rows.push([rec.date,rec.shift,...IPD_DEPTS.map(d=>rec.ipd[d]||0),Object.values(rec.ipd).reduce((a,b)=>a+b,0),rec.opd,rec.admit,rec.discharge,...SERVICES.map(s=>rec.svc[s]||0),rec.totalMoney]));
+  const ws=XLSX.utils.aoa_to_sheet(rows), wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,r.name.replace(/ /g,'_'));
+  XLSX.writeFile(wb,'Records_'+r.name.replace(/ /g,'_')+'.xlsx');
+  showToast('Excel exported!','success');
+}
+function exportMaster() {
+  const rows=[['Date','Receptionist','Shift',...IPD_DEPTS,'Total IPD','OPD','Admit','Discharge',...SERVICES,'Total Money']];
+  activeRecords().forEach(r=>{ const rec=getRec(r.recId); rows.push([r.date,rec?.name||'',r.shift,...IPD_DEPTS.map(d=>r.ipd[d]||0),Object.values(r.ipd).reduce((a,b)=>a+b,0),r.opd,r.admit,r.discharge,...SERVICES.map(s=>r.svc[s]||0),r.totalMoney]); });
+  const ws=XLSX.utils.aoa_to_sheet(rows),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'All Records');
+  XLSX.writeFile(wb,'MediDesk_All_Records.xlsx');
+  showToast('Master export done!','success');
+}
+function exportReplacements() {
+  const rows=[['Date','Replacement','Original','Shift','Start','End','Total IPD','OPD','Total Money']];
+  activeReplacements().forEach(r=>rows.push([r.date,r.replacementName,getRec(r.originalRecId)?.name||'',r.shift,r.startTime,r.endTime,Object.values(r.ipd).reduce((a,b)=>a+b,0),r.opd,r.totalMoney]));
+  const ws=XLSX.utils.aoa_to_sheet(rows),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Replacements');
+  XLSX.writeFile(wb,'MediDesk_Replacements.xlsx');
+  showToast('Replacements exported!','success');
+}
+function exportReceptionistComparison() {
+  const rows=[['Receptionist','Shift','Shift Start','Shift End','Days Updated','Total IPD','Total OPD','Total Admissions','Total Discharges','Total Collection','Avg Collection/Day']];
+  S.receptionists.forEach(r=>{ const recs=getRecords(r.id); const ipd=recs.reduce((s,rec)=>s+Object.values(rec.ipd).reduce((a,b)=>a+b,0),0); const opd=recs.reduce((s,rec)=>s+rec.opd,0); const admit=recs.reduce((s,rec)=>s+rec.admit,0); const disc=recs.reduce((s,rec)=>s+rec.discharge,0); const money=recs.reduce((s,rec)=>s+rec.totalMoney,0); rows.push([r.name,r.shift,r.shiftStart,r.shiftEnd,recs.length,ipd,opd,admit,disc,money,recs.length?Math.round(money/recs.length):0]); });
+  const ws=XLSX.utils.aoa_to_sheet(rows),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Comparison');
+  XLSX.writeFile(wb,'MediDesk_Comparison.xlsx');
+  showToast('Comparison exported!','success');
+}
+
+// =====================================================================
+// DOWNLOAD UPDATED HTML (with embedded data)
+// =====================================================================
+function downloadUpdatedHTML() {
+  var mdPayload = JSON.stringify({
+    receptionists: S.receptionists,
+    records: S.records,
+    replacements: S.replacements,
+    checklists: S.checklists,
+  }).replace(/<\/script>/gi, '<\\/script>');
+  var gistPayload = JSON.stringify({ gistId: GIST_CONFIG.gistId || '', ownerLogin: GIST_CONFIG.ownerLogin || '' }).replace(/<\/script>/gi, '<\\/script>');
+  var newMDTag = '<script id="medidesk-data">window.__MD__=' + mdPayload + ';<\/script>';
+  var newGistTag = '<script id="medidesk-gist-config">window.__GIST_CONFIG__=' + gistPayload + ';<\/script>';
+  function doSave(src) {
+    var updated = src.replace(/<script id="medidesk-data">[\s\S]*?<\/script>/, newMDTag);
+    updated = updated.replace(/<script id="medidesk-gist-config">[\s\S]*?<\/script>/, newGistTag);
+    var blob = new Blob([updated], {type:'text/html'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'MediDesk_' + new Date().toISOString().slice(0,10) + '.html';
+    a.click();
+    showToast('File downloaded — upload to GitHub to publish changes!','success');
+  }
+  fetch(location.href)
+    .then(function(r){ return r.text(); })
+    .then(doSave)
+    .catch(function(){ doSave(document.documentElement.outerHTML); });
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+async function init() {
+  await loadFromStorage();
+  const now = new Date();
+  document.getElementById('topbar-date').textContent = now.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  // Always open on Reception, today's date
+  S.mainTab = 'reception';
+  S.viewDate = todayStr();
+  document.querySelectorAll('.topbar-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-reception')?.classList.add('active');
+  document.getElementById('sidebar').style.display = '';
+  // If stored currentRec no longer exists, fall back to first receptionist
+  if (S.receptionists.length > 0 && !getRec(S.currentRec)) {
+    S.currentRec = S.receptionists[0].id;
+  }
+  updateShiftBadge();
+  renderReception();
+  // Auto-refresh from Gist every 5 minutes so all users stay in sync
+  if (GIST_CONFIG.gistId) {
+    setInterval(async () => { const loaded = await loadFromStorage(); if (loaded) reRender(); }, 300000);
+  }
+  // Indicate sync not configured if no Gist set up
+  if (!GIST_CONFIG.gistId) {
+    setTimeout(() => {
+      const dot = document.getElementById('sync-dot');
+      if (dot) { dot.style.background = '#c98a10'; dot.title = 'GitHub Sync not configured — Admin: click to set up'; }
+    }, 1500);
+  }
+}
+
+init();
+</script>
+
+
+</body></html>
